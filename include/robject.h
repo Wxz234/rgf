@@ -1,6 +1,6 @@
 #pragma once
 
-namespace RGF {
+namespace rgf {
 
 	struct robject {
 		virtual void release() = 0;
