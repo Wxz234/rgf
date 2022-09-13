@@ -4,7 +4,7 @@
 #include <d3d12sdklayers.h>
 namespace rgf {
 
-	ID3D12Device7* _getDevice() {
+	ID3D12Device4* _getDevice() {
 #ifdef _DEBUG
 		ID3D12Debug* debugController = nullptr;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
@@ -13,7 +13,7 @@ namespace rgf {
 		}
 		debugController->Release();
 #endif
-		ID3D12Device7* pDevice;
+		ID3D12Device4* pDevice;
 		D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&pDevice));
 		return pDevice;
 	}
@@ -87,7 +87,7 @@ namespace rgf {
 			delete this;
 		}
 
-		ID3D12Device7* getDevice() const {
+		ID3D12Device4* getDevice() const {
 			return pDevice;
 		}
 
@@ -109,7 +109,7 @@ namespace rgf {
 			}
 		}
 
-		ID3D12Device7* pDevice;
+		ID3D12Device4* pDevice;
 		ID3D12CommandQueue* pGraphicsQueue;
 		ID3D12CommandQueue* pCopyQueue;
 		ID3D12CommandQueue* pComputeQueue;
