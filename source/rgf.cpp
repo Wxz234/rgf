@@ -1,4 +1,1 @@
-﻿#include "robject.h"
-__declspec(dllexport) void f() {
-
-}
+﻿#include "rgf.h"

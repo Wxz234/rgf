@@ -7,9 +7,7 @@ namespace rgf {
 	};
 
 	inline void removeObject(robject* pObj) {
-		if (pObj) {
-			pObj->release();
-		}
+		pObj->release();
 	}
 
 }
