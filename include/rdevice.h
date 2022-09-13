@@ -15,6 +15,7 @@ namespace rgf {
 
 	struct rdevice : public robject {
 		virtual ID3D12Device4* getDevice() const = 0;
+
 		virtual void frame() = 0;
 	};
 
