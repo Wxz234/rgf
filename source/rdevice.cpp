@@ -1,11 +1,10 @@
 #include "rdevice.h"
 #include "D3D12MemAlloc.h"
-#include <dxgi1_6.h>
 #include <combaseapi.h>
 #include <d3d12sdklayers.h>
 namespace rgf {
 
-	ID3D12Device4* _getDevice(IDXGIAdapter* pAdapter) {
+	ID3D12Device* _getDevice(IDXGIAdapter* pAdapter) {
 #ifdef _DEBUG
 		ID3D12Debug* debugController = nullptr;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
@@ -14,7 +13,7 @@ namespace rgf {
 		}
 		debugController->Release();
 #endif
-		ID3D12Device4* pDevice;
+		ID3D12Device* pDevice;
 		D3D12CreateDevice(pAdapter, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&pDevice));
 		return pDevice;
 	}
@@ -27,7 +26,7 @@ namespace rgf {
 		return pQueue;
 	}
 
-	IDXGISwapChain4* getSwapChain(ID3D12CommandQueue* pQueue, HWND hwnd, uint32_t w, uint32_t h) {
+	IDXGISwapChain4* _getSwapChain(ID3D12CommandQueue* pQueue, HWND hwnd, uint32_t w, uint32_t h) {
 		IDXGIFactory7* pFactory;
 #ifdef _DEBUG
 		CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&pFactory));
@@ -81,7 +80,7 @@ namespace rgf {
 			pGraphicsQueue = getQueue(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
 			pCopyQueue = getQueue(pDevice, D3D12_COMMAND_LIST_TYPE_COPY);
 			pComputeQueue = getQueue(pDevice, D3D12_COMMAND_LIST_TYPE_COMPUTE);
-			pSwapChain = getSwapChain(pGraphicsQueue, pDesc->mHwnd, pDesc->mWidth, pDesc->mHeight);
+			pSwapChain = _getSwapChain(pGraphicsQueue, pDesc->mHwnd, pDesc->mWidth, pDesc->mHeight);
 			mFenceValue = 1;
 			pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence));
 			mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -112,8 +111,12 @@ namespace rgf {
 			delete this;
 		}
 
-		ID3D12Device4* getDevice() const {
+		ID3D12Device* getDevice() const {
 			return pDevice;
+		}
+
+		IDXGISwapChain* getSwapChain() const {
+			return pSwapChain;
 		}
 
 		void frame() {
@@ -135,7 +138,7 @@ namespace rgf {
 		}
 
 		IDXGIAdapter* pAdapter;
-		ID3D12Device4* pDevice;
+		ID3D12Device* pDevice;
 		ID3D12CommandQueue* pGraphicsQueue;
 		ID3D12CommandQueue* pCopyQueue;
 		ID3D12CommandQueue* pComputeQueue;
