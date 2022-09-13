@@ -119,6 +119,7 @@ namespace rgf {
 		ID3D12Fence* pFence;
 		HANDLE mFenceEvent;
 		//
+
 	};
 
 	rdevice* create(rdeviceDesc* pDesc) {
