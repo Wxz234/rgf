@@ -124,7 +124,7 @@ namespace rgf {
 		return true;
 	}
 
-	struct DescriptorManager {
+	struct DescriptorManager : public robject {
 		DescriptorManager() {}
 		DescriptorManager(const DescriptorManager& r) = delete;
 		DescriptorManager(DescriptorManager&& r) = delete;
@@ -132,7 +132,18 @@ namespace rgf {
 		DescriptorManager& operator=(DescriptorManager&& r) = delete;
 
 		~DescriptorManager() {
-			Release();
+			if (pDescriptorHeap) {
+				pDescriptorHeap->Release();
+			}
+			if (pVisableDescriptorHeap) {
+				pVisableDescriptorHeap->Release();
+			}
+			pDescriptorHeap = nullptr;
+			pVisableDescriptorHeap = nullptr;
+		}
+
+		void release() {
+			delete this;
 		}
 
 		void Init(ID3D12Device* pDevice) {
@@ -151,17 +162,6 @@ namespace rgf {
 			mState.shrink_to_fit();
 
 			mDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		}
-
-		void Release() {
-			if (pDescriptorHeap) {
-				pDescriptorHeap->Release();
-			}
-			if (pVisableDescriptorHeap) {
-				pVisableDescriptorHeap->Release();
-			}
-			pDescriptorHeap = nullptr;
-			pVisableDescriptorHeap = nullptr;
 		}
 
 		void AllocStatic(uint32_t &index) {
@@ -283,16 +283,26 @@ namespace rgf {
 		uint32_t mDescriptorSize = 0;
 	};
 
-	struct GBufferResource {
+	DescriptorManager* createDescriptorManager(ID3D12Device *pDevice) {
+		DescriptorManager* d = new DescriptorManager;
+		d->Init(pDevice);
+		return d;
+	}
 
+	struct GBufferResource : public robject {
 		GBufferResource() {}
 		GBufferResource(const GBufferResource& r) = delete;
 		GBufferResource(GBufferResource&& r) = delete;
 		GBufferResource& operator=(const GBufferResource& r) = delete;
 		GBufferResource& operator=(GBufferResource&& r) = delete;
-
 		~GBufferResource() {
-			Release();
+			if (pGBufferA) {
+				pGBufferA->Release();
+			}
+			pGBufferA = nullptr;
+		}
+		void release() {
+			delete this;
 		}
 
 		void Init(D3D12MA::Allocator* pAllocator, uint32_t w, uint32_t h) {
@@ -311,14 +321,32 @@ namespace rgf {
 			pAllocator->CreateResource(&allocDesc, &BufferADesc, D3D12_RESOURCE_STATE_COMMON, nullptr, &pGBufferA, IID_NULL, nullptr);
 		}
 		
-		void Release() {
-			if (pGBufferA) {
-				pGBufferA->Release();
-			}
-			pGBufferA = nullptr;
+		D3D12MA::Allocation* pGBufferA = nullptr;
+	};
+
+	GBufferResource* createGBufferResource(D3D12MA::Allocator* pAllocator, uint32_t w, uint32_t h) {
+		GBufferResource* g = new GBufferResource;
+		g->Init(pAllocator, w, h);
+		return g;
+	}
+
+	struct Pass {
+		virtual ~Pass() {}
+		virtual void Init(ID3D12Device* pDevice) = 0;
+		virtual void Release() = 0;
+	};
+
+	struct GBufferPass : public Pass {
+		void Init(ID3D12Device* pDevice) {
+
 		}
 
-		D3D12MA::Allocation* pGBufferA = nullptr;
+		void Release() {
+
+		}
+
+		ID3D12CommandAllocator* pPostProcessAllocator;
+		ID3D12GraphicsCommandList3* pPostProcessList;
 	};
 
 
@@ -348,26 +376,16 @@ namespace rgf {
 			allocatorDesc.PreferredBlockSize = 0;
 			D3D12MA::CreateAllocator(&allocatorDesc, &pAllocator);
 			//
-			pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&pPostProcessAllocator));
-			pDevice->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&pPostProcessList));
-			pPostProcessRoot = getPostprocessRootSignature(pDevice);
-			pPostProcessPipeline = getPostprocessPipeline(pDevice, pPostProcessRoot);
+			//pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&pPostProcessAllocator));
+			//pDevice->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&pPostProcessList));
+			//pPostProcessRoot = getPostprocessRootSignature(pDevice);
+			//pPostProcessPipeline = getPostprocessPipeline(pDevice, pPostProcessRoot);
 
-			mGBufferResource.Init(pAllocator, pDesc->mWidth, pDesc->mHeight);
-			mGBufferDescriptor.Init(pDevice);
-
-			mGBufferDescriptor.AllocStatic(mGBufferAIndex);
-			mGBufferDescriptor.BindSRV(mGBufferAIndex, mGBufferResource.pGBufferA->GetResource(), nullptr);
 		}
 
 		~RDevice() {
 			Wait();
-			mGBufferDescriptor.Release();
-			mGBufferResource.Release();
-			pPostProcessPipeline->Release();
-			pPostProcessRoot->Release();
-			pPostProcessList->Release();
-			pPostProcessAllocator->Release();
+
 			pAllocator->Release();
 			CloseHandle(mFenceEvent);
 			pFence->Release();
@@ -422,15 +440,12 @@ namespace rgf {
 		//
 		D3D12MA::Allocator* pAllocator;
 		// PostProcess pass
-		ID3D12CommandAllocator* pPostProcessAllocator;
-		ID3D12GraphicsCommandList3* pPostProcessList;
-		ID3D12RootSignature* pPostProcessRoot;
-		ID3D12PipelineState* pPostProcessPipeline;
-		// Descriptor Heap
-		DescriptorManager mGBufferDescriptor;
-		GBufferResource mGBufferResource;
 
-		uint32_t mGBufferAIndex;
+		// Descriptor Heap
+		//DescriptorManager mGBufferDescriptor;
+		//GBufferResource mGBufferResource;
+
+		//uint32_t mGBufferASrvIndex;
 
 	};
 
