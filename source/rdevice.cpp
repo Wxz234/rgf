@@ -77,38 +77,6 @@ namespace rgf {
 		return pAdapter;
 	}
 
-	ID3D12RootSignature* getPostprocessRootSignature(ID3D12Device* pDevice) {
-		CD3DX12_STATIC_SAMPLER_DESC StaticSamplers;
-		StaticSamplers.Init(0, D3D12_FILTER_MIN_MAG_MIP_POINT);
-		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC RootSig;
-		RootSig.Init_1_1(0, nullptr, 1, &StaticSamplers, (D3D12_ROOT_SIGNATURE_FLAGS)0x400);
-		ID3DBlob* pSerializedRootSig;
-		D3D12SerializeVersionedRootSignature(&RootSig, &pSerializedRootSig, nullptr);
-
-		ID3D12RootSignature* pRootSignature;
-		pDevice->CreateRootSignature(0,pSerializedRootSig->GetBufferPointer(), pSerializedRootSig->GetBufferSize(),IID_PPV_ARGS(&pRootSignature));
-		pSerializedRootSig->Release();
-		return pRootSignature;
-	}
-
-	ID3D12PipelineState* getPostprocessPipeline(ID3D12Device* pDevice, ID3D12RootSignature* pRoot) {
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
-		psoDesc.pRootSignature = pRoot;
-		psoDesc.VS = { postprocessVS, sizeof(postprocessVS) };
-		psoDesc.PS = { postprocessPS, sizeof(postprocessPS) };
-		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		psoDesc.SampleMask = 0xffffffff;
-		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		psoDesc.NumRenderTargets = 1;
-		psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		psoDesc.SampleDesc.Count = 1;
-		ID3D12PipelineState* pPSO;
-		pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pPSO));
-
-		return pPSO;
-	}
-
 	bool checkFeature(ID3D12Device* pDevice) {
 		if (D3D12_FEATURE_DATA_SHADER_MODEL shaderModel{ D3D_SHADER_MODEL_6_6 }; FAILED(pDevice->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel)))
 			|| (shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_6))
@@ -330,25 +298,32 @@ namespace rgf {
 		return g;
 	}
 
-	struct Pass {
-		virtual ~Pass() {}
+	struct Pass : public robject {
 		virtual void Init(ID3D12Device* pDevice) = 0;
-		virtual void Release() = 0;
 	};
 
 	struct GBufferPass : public Pass {
+		~GBufferPass() {
+
+		}
+
 		void Init(ID3D12Device* pDevice) {
-
+			this->pDevice = pDevice;
 		}
 
-		void Release() {
-
+		void release() {
+			delete this;
 		}
-
-		ID3D12CommandAllocator* pPostProcessAllocator;
-		ID3D12GraphicsCommandList3* pPostProcessList;
+		ID3D12Device* pDevice = nullptr;
+		ID3D12CommandAllocator* pGBufferAllocator = nullptr;
+		ID3D12GraphicsCommandList3* pGBufferList = nullptr;
 	};
 
+	GBufferPass* createGBufferPass(ID3D12Device* pDevice) {
+		GBufferPass* g = new GBufferPass;
+		g->Init(pDevice);
+		return g;
+	}
 
 	struct RDevice : public rdevice {
 		RDevice(rdeviceDesc* pDesc) {
