@@ -8,6 +8,8 @@
 
 #include "post_vs_shader.h"
 #include "post_ps_shader.h"
+#include "gbuffer_vs.h"
+#include "gbuffer_ps.h"
 namespace rgf {
 
 	ID3D12Device4* _getDevice(IDXGIAdapter* pAdapter) {
@@ -299,27 +301,68 @@ namespace rgf {
 	}
 
 	struct Pass : public robject {
-		virtual void Init(ID3D12Device* pDevice) = 0;
+		virtual void Init(ID3D12Device4* pDevice) = 0;
 	};
 
 	struct GBufferPass : public Pass {
 		~GBufferPass() {
-
+			pGBufferAllocator->Release();
+			pGBufferList->Release();
+			pRootSignature->Release();
+			pPSO->Release();
 		}
 
-		void Init(ID3D12Device* pDevice) {
+		void Init(ID3D12Device4* pDevice) {
 			this->pDevice = pDevice;
+			pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&pGBufferAllocator));
+			pDevice->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&pGBufferList));
+
+			CD3DX12_STATIC_SAMPLER_DESC StaticSamplers;
+			StaticSamplers.Init(0, D3D12_FILTER_MIN_MAG_MIP_POINT);
+			CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC RootSig;
+			RootSig.Init_1_1(0, nullptr, 1, &StaticSamplers, ((D3D12_ROOT_SIGNATURE_FLAGS)0x400) | D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+			ID3DBlob* pSerializedRootSig;
+			D3D12SerializeVersionedRootSignature(&RootSig, &pSerializedRootSig, nullptr);
+
+			pDevice->CreateRootSignature(0, pSerializedRootSig->GetBufferPointer(), pSerializedRootSig->GetBufferSize(), IID_PPV_ARGS(&pRootSignature));
+			pSerializedRootSig->Release();
+
+			D3D12_INPUT_ELEMENT_DESC gbufferInputDesc[] =
+            {
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "ID", 0, DXGI_FORMAT_R32_UINT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+			};
+
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
+			psoDesc.InputLayout = { gbufferInputDesc ,4 };
+			psoDesc.pRootSignature = pRootSignature;
+			psoDesc.VS = { gbufferVS, sizeof(gbufferVS) };
+			psoDesc.PS = { gbufferPS, sizeof(gbufferPS) };
+			psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			psoDesc.SampleMask = 0xffffffff;
+			psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			psoDesc.NumRenderTargets = 2;
+			psoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			psoDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+			psoDesc.SampleDesc.Count = 1;
+			pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pPSO));
 		}
 
 		void release() {
 			delete this;
 		}
+
 		ID3D12Device* pDevice = nullptr;
 		ID3D12CommandAllocator* pGBufferAllocator = nullptr;
 		ID3D12GraphicsCommandList3* pGBufferList = nullptr;
+		ID3D12RootSignature* pRootSignature = nullptr;
+		ID3D12PipelineState* pPSO = nullptr;
 	};
 
-	GBufferPass* createGBufferPass(ID3D12Device* pDevice) {
+	GBufferPass* createGBufferPass(ID3D12Device4* pDevice) {
 		GBufferPass* g = new GBufferPass;
 		g->Init(pDevice);
 		return g;
@@ -351,16 +394,14 @@ namespace rgf {
 			allocatorDesc.PreferredBlockSize = 0;
 			D3D12MA::CreateAllocator(&allocatorDesc, &pAllocator);
 			//
-			//pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&pPostProcessAllocator));
-			//pDevice->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&pPostProcessList));
-			//pPostProcessRoot = getPostprocessRootSignature(pDevice);
-			//pPostProcessPipeline = getPostprocessPipeline(pDevice, pPostProcessRoot);
+			pGBufferPass = createGBufferPass(pDevice);
 
 		}
 
 		~RDevice() {
 			Wait();
 
+			removeObject(pGBufferPass);
 			pAllocator->Release();
 			CloseHandle(mFenceEvent);
 			pFence->Release();
@@ -415,13 +456,7 @@ namespace rgf {
 		//
 		D3D12MA::Allocator* pAllocator;
 		// PostProcess pass
-
-		// Descriptor Heap
-		//DescriptorManager mGBufferDescriptor;
-		//GBufferResource mGBufferResource;
-
-		//uint32_t mGBufferASrvIndex;
-
+		GBufferPass* pGBufferPass;
 	};
 
 	rdevice* create(rdeviceDesc* pDesc) {
