@@ -360,6 +360,9 @@ namespace rgf {
 		ID3D12GraphicsCommandList3* pGBufferList = nullptr;
 		ID3D12RootSignature* pRootSignature = nullptr;
 		ID3D12PipelineState* pPSO = nullptr;
+
+		ID3D12Resource* pGBufferMatrix = nullptr;
+		ID3D12Resource* pGBufferLight = nullptr;
 	};
 
 	GBufferPass* createGBufferPass(ID3D12Device4* pDevice) {
