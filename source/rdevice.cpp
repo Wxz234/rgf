@@ -5,6 +5,7 @@
 #include <d3d12sdklayers.h>
 #include <vector>
 #include <stdexcept>
+#include <DirectXMath.h>
 
 #include "post_vs_shader.h"
 #include "post_ps_shader.h"
@@ -262,7 +263,11 @@ namespace rgf {
 		}
 
 		~GBufferResource() {
+			pGBufferLight->GetResource()->Unmap(0, nullptr);
+			pGBufferMatrix->GetResource()->Unmap(0, nullptr);
 			pGBufferA->Release();
+			pGBufferMatrix->Release();
+			pGBufferLight->Release();
 		}
 
 		void release() {
@@ -272,7 +277,20 @@ namespace rgf {
 		D3D12MA::Allocation* pGBufferMatrix = nullptr;
 		D3D12MA::Allocation* pGBufferLight = nullptr;
 		D3D12MA::Allocation* pGBufferA = nullptr;
+
+		void* pGBufferMatrixData;
+		void* pGBufferLightData;
 	private:
+
+		struct GBufferMatrix{
+			DirectX::XMFLOAT4X4 MVP;
+			DirectX::XMFLOAT4X4 WorldInvTranspose;
+		};
+
+		struct GBufferLight {
+			DirectX::XMFLOAT4 DirectionAndIntensity;
+		};
+
 		void Init(D3D12MA::Allocator* pAllocator, uint32_t w, uint32_t h) {
 			D3D12MA::ALLOCATION_DESC allocDesc{};
 			allocDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
@@ -285,7 +303,25 @@ namespace rgf {
 			BufferADesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 			BufferADesc.SampleDesc.Count = 1;
 			pAllocator->CreateResource(&allocDesc, &BufferADesc, D3D12_RESOURCE_STATE_COMMON, nullptr, &pGBufferA, IID_NULL, nullptr);
-			//CD3DX12_RESOURCE_DESC 
+			CD3DX12_RESOURCE_DESC MatrixDesc = CD3DX12_RESOURCE_DESC::Buffer(_getConstantBufferSize(sizeof(GBufferMatrix)));
+			allocDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
+			pAllocator->CreateResource(&allocDesc, &MatrixDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &pGBufferMatrix, IID_NULL, nullptr);
+			CD3DX12_RESOURCE_DESC LightDesc = CD3DX12_RESOURCE_DESC::Buffer(_getConstantBufferSize(sizeof(GBufferLight)));
+			pAllocator->CreateResource(&allocDesc, &LightDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &pGBufferLight, IID_NULL, nullptr);
+
+			pGBufferMatrix->GetResource()->Map(0, 0, &pGBufferMatrixData);
+			pGBufferLight->GetResource()->Map(0, 0, &pGBufferLightData);
+		}
+
+		uint64_t _getConstantBufferSize(uint64_t size) {
+			if (size == 0) {
+				return 256;
+			}
+			auto t = size / 256;
+			if (size % 256 == 0) {
+				return t * 256;
+			}
+			return (t + 1) * 256;
 		}
 	};
 
@@ -316,7 +352,6 @@ namespace rgf {
 			pPSO->Release();
 		}
 
-
 		void reset() {
 			pGBufferAllocator->Reset();
 			pGBufferList->Reset(pGBufferAllocator, nullptr);
@@ -325,7 +360,6 @@ namespace rgf {
 		void close() {
 			pGBufferList->Close();
 		}
-
 
 		void release() {
 			delete this;
@@ -406,6 +440,8 @@ namespace rgf {
 				throw std::runtime_error("Your hardware does not support this feature.");
 			}
 
+			mLightDir = DirectX::XMFLOAT3(1.f, 1.f, 1.f);
+
 			pGraphicsQueue = getQueue(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
 			pCopyQueue = getQueue(pDevice, D3D12_COMMAND_LIST_TYPE_COPY);
 			pComputeQueue = getQueue(pDevice, D3D12_COMMAND_LIST_TYPE_COMPUTE);
@@ -456,6 +492,10 @@ namespace rgf {
 			return pSwapChain;
 		}
 
+		void setSkyLightDirection(float x, float y, float z) {
+			mLightDir = DirectX::XMFLOAT3(x, y, z);
+		}
+
 		void frame() {
 			pGBufferPass->reset();
 			pGBufferPass->close();
@@ -499,6 +539,8 @@ namespace rgf {
 		DescriptorManager* pManager;
 
 		GBufferPass* pGBufferPass;
+
+		DirectX::XMFLOAT3 mLightDir;
 	};
 
 	rdevice* create(rdeviceDesc* pDesc) {

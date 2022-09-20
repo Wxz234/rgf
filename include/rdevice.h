@@ -17,6 +17,7 @@ namespace rgf {
 	struct rdevice : public robject {
 		virtual ID3D12Device* getDevice() const = 0;
 		virtual IDXGISwapChain* getSwapChain() const = 0;
+		virtual void setSkyLightDirection(float x, float y, float z) = 0;
 		virtual void frame() = 0;
 	};
 
