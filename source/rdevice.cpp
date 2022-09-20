@@ -440,7 +440,7 @@ namespace rgf {
 				throw std::runtime_error("Your hardware does not support this feature.");
 			}
 
-			mLightDir = DirectX::XMFLOAT3(1.f, 1.f, 1.f);
+			mLightDirAndIntensity = DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
 
 			pGraphicsQueue = getQueue(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
 			pCopyQueue = getQueue(pDevice, D3D12_COMMAND_LIST_TYPE_COPY);
@@ -493,7 +493,11 @@ namespace rgf {
 		}
 
 		void setSkyLightDirection(float x, float y, float z) {
-			mLightDir = DirectX::XMFLOAT3(x, y, z);
+			mLightDirAndIntensity = DirectX::XMFLOAT4(x, y, z, mLightDirAndIntensity.z);
+		}
+
+		void setSkyLightIntensity(float intensity) {
+			mLightDirAndIntensity = DirectX::XMFLOAT4(mLightDirAndIntensity.x, mLightDirAndIntensity.y, mLightDirAndIntensity.z, intensity);
 		}
 
 		void frame() {
@@ -540,7 +544,7 @@ namespace rgf {
 
 		GBufferPass* pGBufferPass;
 
-		DirectX::XMFLOAT3 mLightDir;
+		DirectX::XMFLOAT4 mLightDirAndIntensity;
 	};
 
 	rdevice* create(rdeviceDesc* pDesc) {
