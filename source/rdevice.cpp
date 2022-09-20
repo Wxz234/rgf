@@ -95,11 +95,9 @@ namespace rgf {
 	}
 
 	struct DescriptorManager : public robject {
-		DescriptorManager() {}
-		DescriptorManager(const DescriptorManager& r) = delete;
-		DescriptorManager(DescriptorManager&& r) = delete;
-		DescriptorManager& operator=(const DescriptorManager& r) = delete;
-		DescriptorManager& operator=(DescriptorManager&& r) = delete;
+		DescriptorManager(ID3D12Device* pDevice) {
+			Init(pDevice);
+		}
 
 		~DescriptorManager() {
 			if (pDescriptorHeap) {
@@ -116,25 +114,7 @@ namespace rgf {
 			delete this;
 		}
 
-		void Init(ID3D12Device* pDevice) {
-
-			mNumDescriptors = 10;
-
-			this->pDevice = pDevice;
-			D3D12_DESCRIPTOR_HEAP_DESC heapDesc{};
-			heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-			heapDesc.NumDescriptors = mNumDescriptors;
-			pDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&pDescriptorHeap));
-			heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-			pDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&pVisableDescriptorHeap));
-
-			mState.resize(mNumDescriptors);
-			mState.shrink_to_fit();
-
-			mDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		}
-
-		void AllocStatic(uint32_t &index) {
+		void allocStatic(uint32_t &index) {
 			index = 0;
 			for (auto& state : mState) {
 				if (!state.IsAssigned) {
@@ -171,7 +151,7 @@ namespace rgf {
 			}
 		}
 
-		void AllocDynamic(uint32_t& index) {
+		void allocDynamic(uint32_t& index) {
 			index = 0;
 			for (auto& state : mState) {
 				if (!state.IsAssigned) {
@@ -208,7 +188,7 @@ namespace rgf {
 			}
 		}
 
-		void Update() {
+		void update() {
 			for (auto &state : mState) {
 				if (state.IsDynamic) {
 					state.IsAssigned = false;
@@ -216,25 +196,25 @@ namespace rgf {
 			}
 		}
 
-		void BindSRV(uint32_t index, ID3D12Resource* pRes, const D3D12_SHADER_RESOURCE_VIEW_DESC* pDesc) {
+		void bindSRV(uint32_t index, ID3D12Resource* pRes, const D3D12_SHADER_RESOURCE_VIEW_DESC* pDesc) {
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
 			pDevice->CreateShaderResourceView(pRes, pDesc, handle);
 			pDevice->CopyDescriptorsSimple(1, pVisableDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 
-		void BindCBV(uint32_t index, const D3D12_CONSTANT_BUFFER_VIEW_DESC* pDesc) {
+		void bindCBV(uint32_t index, const D3D12_CONSTANT_BUFFER_VIEW_DESC* pDesc) {
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
 			pDevice->CreateConstantBufferView(pDesc, handle);
 			pDevice->CopyDescriptorsSimple(1, pVisableDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 
-		void BindUAV(uint32_t index, ID3D12Resource* pRes, ID3D12Resource* pCounterResource, const D3D12_UNORDERED_ACCESS_VIEW_DESC* pDesc) {
+		void bindUAV(uint32_t index, ID3D12Resource* pRes, ID3D12Resource* pCounterResource, const D3D12_UNORDERED_ACCESS_VIEW_DESC* pDesc) {
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
 			pDevice->CreateUnorderedAccessView(pRes, pCounterResource, pDesc, handle);
 			pDevice->CopyDescriptorsSimple(1, pVisableDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 
-		D3D12_CPU_DESCRIPTOR_HANDLE GetVisableDescriptor(uint32_t index) const {
+		D3D12_CPU_DESCRIPTOR_HANDLE getVisableDescriptor(uint32_t index) const {
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(pVisableDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
 			return handle;
 		}
@@ -251,34 +231,51 @@ namespace rgf {
 
 		uint32_t mNumDescriptors = 0;
 		uint32_t mDescriptorSize = 0;
+	private:
+		void Init(ID3D12Device* pDevice) {
+
+			mNumDescriptors = 10;
+
+			this->pDevice = pDevice;
+			D3D12_DESCRIPTOR_HEAP_DESC heapDesc{};
+			heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			heapDesc.NumDescriptors = mNumDescriptors;
+			pDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&pDescriptorHeap));
+			heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			pDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&pVisableDescriptorHeap));
+
+			mState.resize(mNumDescriptors);
+			mState.shrink_to_fit();
+
+			mDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		}
 	};
 
 	DescriptorManager* createDescriptorManager(ID3D12Device *pDevice) {
-		DescriptorManager* d = new DescriptorManager;
-		d->Init(pDevice);
+		DescriptorManager* d = new DescriptorManager(pDevice);
 		return d;
 	}
 
 	struct GBufferResource : public robject {
-		GBufferResource() {}
-		GBufferResource(const GBufferResource& r) = delete;
-		GBufferResource(GBufferResource&& r) = delete;
-		GBufferResource& operator=(const GBufferResource& r) = delete;
-		GBufferResource& operator=(GBufferResource&& r) = delete;
-		~GBufferResource() {
-			if (pGBufferA) {
-				pGBufferA->Release();
-			}
-			pGBufferA = nullptr;
+		GBufferResource(D3D12MA::Allocator* pAllocator, uint32_t w, uint32_t h) {
+			Init(pAllocator, w, h);
 		}
+
+		~GBufferResource() {
+			pGBufferA->Release();
+		}
+
 		void release() {
 			delete this;
 		}
 
+		D3D12MA::Allocation* pGBufferMatrix = nullptr;
+		D3D12MA::Allocation* pGBufferLight = nullptr;
+		D3D12MA::Allocation* pGBufferA = nullptr;
+	private:
 		void Init(D3D12MA::Allocator* pAllocator, uint32_t w, uint32_t h) {
 			D3D12MA::ALLOCATION_DESC allocDesc{};
 			allocDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
-
 			D3D12_RESOURCE_DESC BufferADesc{};
 			BufferADesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 			BufferADesc.Width = w;
@@ -287,35 +284,71 @@ namespace rgf {
 			BufferADesc.MipLevels = 1;
 			BufferADesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 			BufferADesc.SampleDesc.Count = 1;
-
 			pAllocator->CreateResource(&allocDesc, &BufferADesc, D3D12_RESOURCE_STATE_COMMON, nullptr, &pGBufferA, IID_NULL, nullptr);
+			//CD3DX12_RESOURCE_DESC 
 		}
-		
-		D3D12MA::Allocation* pGBufferA = nullptr;
 	};
 
 	GBufferResource* createGBufferResource(D3D12MA::Allocator* pAllocator, uint32_t w, uint32_t h) {
-		GBufferResource* g = new GBufferResource;
-		g->Init(pAllocator, w, h);
+		GBufferResource* g = new GBufferResource(pAllocator, w, h);
 		return g;
 	}
 
 	struct Pass : public robject {
-		virtual void Init(ID3D12Device4* pDevice) = 0;
+		virtual void reset() = 0;
+		virtual void close() = 0;
 	};
 
 	struct GBufferPass : public Pass {
+
+		GBufferPass(ID3D12Device4* pDevice, D3D12MA::Allocator* pAllocator, DescriptorManager* pManager, uint32_t w, uint32_t h) {
+			_Init(pDevice);
+			_BindDescriptorManager(pManager);
+			this->pAllocator = pAllocator;
+			pGBufferResource = createGBufferResource(pAllocator, w, h);
+		}
+
 		~GBufferPass() {
+			removeObject(pGBufferResource);
 			pGBufferAllocator->Release();
 			pGBufferList->Release();
 			pRootSignature->Release();
 			pPSO->Release();
 		}
 
-		void Init(ID3D12Device4* pDevice) {
+
+		void reset() {
+			pGBufferAllocator->Reset();
+			pGBufferList->Reset(pGBufferAllocator, nullptr);
+		}
+
+		void close() {
+			pGBufferList->Close();
+		}
+
+
+		void release() {
+			delete this;
+		}
+
+		D3D12MA::Allocator* pAllocator;
+		DescriptorManager* pManager;
+		ID3D12Device* pDevice;
+		ID3D12CommandAllocator* pGBufferAllocator;
+		ID3D12GraphicsCommandList3* pGBufferList;
+		ID3D12RootSignature* pRootSignature;
+		ID3D12PipelineState* pPSO;
+
+		GBufferResource* pGBufferResource;
+
+		uint32_t mMatrixIndex;
+		uint32_t mLightIndex;
+	private:
+		void _Init(ID3D12Device4* pDevice) {
 			this->pDevice = pDevice;
 			pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&pGBufferAllocator));
 			pDevice->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&pGBufferList));
+			pGBufferList->SetName(L"GBufferList");
 
 			CD3DX12_STATIC_SAMPLER_DESC StaticSamplers;
 			StaticSamplers.Init(0, D3D12_FILTER_MIN_MAG_MIP_POINT);
@@ -328,7 +361,7 @@ namespace rgf {
 			pSerializedRootSig->Release();
 
 			D3D12_INPUT_ELEMENT_DESC gbufferInputDesc[] =
-            {
+			{
 				{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -351,23 +384,15 @@ namespace rgf {
 			pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pPSO));
 		}
 
-		void release() {
-			delete this;
+		void _BindDescriptorManager(DescriptorManager* pManager) {
+			this->pManager = pManager;
+			pManager->allocStatic(mMatrixIndex);
+			pManager->allocStatic(mLightIndex);
 		}
-
-		ID3D12Device* pDevice = nullptr;
-		ID3D12CommandAllocator* pGBufferAllocator = nullptr;
-		ID3D12GraphicsCommandList3* pGBufferList = nullptr;
-		ID3D12RootSignature* pRootSignature = nullptr;
-		ID3D12PipelineState* pPSO = nullptr;
-
-		ID3D12Resource* pGBufferMatrix = nullptr;
-		ID3D12Resource* pGBufferLight = nullptr;
 	};
 
-	GBufferPass* createGBufferPass(ID3D12Device4* pDevice) {
-		GBufferPass* g = new GBufferPass;
-		g->Init(pDevice);
+	GBufferPass* createGBufferPass(ID3D12Device4* pDevice, D3D12MA::Allocator* pAllocator, DescriptorManager* pManager, uint32_t w, uint32_t h) {
+		GBufferPass* g = new GBufferPass(pDevice, pAllocator, pManager, w, h);
 		return g;
 	}
 
@@ -388,7 +413,7 @@ namespace rgf {
 			mFenceValue = 1;
 			pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence));
 			mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-			//
+			
 			D3D12MA::ALLOCATOR_DESC allocatorDesc{};
 			allocatorDesc.Flags = D3D12MA::ALLOCATOR_FLAG_NONE;
 			allocatorDesc.pAdapter = pAdapter;
@@ -396,15 +421,18 @@ namespace rgf {
 			allocatorDesc.pDevice = pDevice;
 			allocatorDesc.PreferredBlockSize = 0;
 			D3D12MA::CreateAllocator(&allocatorDesc, &pAllocator);
-			//
-			pGBufferPass = createGBufferPass(pDevice);
-
+			
+			pManager = createDescriptorManager(pDevice);
+			
+			pGBufferPass = createGBufferPass(pDevice, pAllocator, pManager, pDesc->mWidth, pDesc->mHeight);
+			mLists.push_back(pGBufferPass->pGBufferList);
 		}
 
 		~RDevice() {
-			Wait();
+			_wait();
 
 			removeObject(pGBufferPass);
+			removeObject(pManager);
 			pAllocator->Release();
 			CloseHandle(mFenceEvent);
 			pFence->Release();
@@ -429,11 +457,15 @@ namespace rgf {
 		}
 
 		void frame() {
+			pGBufferPass->reset();
+			pGBufferPass->close();
+			
+			_submit();
 			pSwapChain->Present(1, 0);
-			Wait();
+			_wait();
 		}
 
-		void Wait() {
+		void _wait() {
 			const UINT64 fence = mFenceValue;
 			pGraphicsQueue->Signal(pFence, fence);
 			mFenceValue++;
@@ -446,6 +478,10 @@ namespace rgf {
 			}
 		}
 
+		void _submit() {
+			pGraphicsQueue->ExecuteCommandLists(mLists.size(), mLists.data());
+		}
+
 		IDXGIAdapter* pAdapter;
 		ID3D12Device4* pDevice;
 		ID3D12CommandQueue* pGraphicsQueue;
@@ -456,9 +492,12 @@ namespace rgf {
 		UINT64 mFenceValue;
 		ID3D12Fence* pFence;
 		HANDLE mFenceEvent;
-		//
+
+		std::vector<ID3D12CommandList*> mLists;
 		D3D12MA::Allocator* pAllocator;
-		// PostProcess pass
+
+		DescriptorManager* pManager;
+
 		GBufferPass* pGBufferPass;
 	};
 
