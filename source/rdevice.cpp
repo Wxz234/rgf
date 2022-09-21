@@ -1,4 +1,5 @@
 #include "rdevice.h"
+#include "rpass.h"
 #include "D3D12MemAlloc.h"
 
 #include <stdexcept>
@@ -138,6 +139,22 @@ namespace rgf {
 
 		IDXGISwapChain* getSwapChain() const {
 			return pSwapChain;
+		}
+
+		void executePass(rpass* pPass) {
+			auto listType = pPass->getList()->GetType();
+			if (listType == D3D12_COMMAND_LIST_TYPE_DIRECT) {
+				ID3D12CommandList* pLists[] = { pPass->getList() };
+				pGraphicsQueue->ExecuteCommandLists(1, pLists);
+			}
+			else if (listType == D3D12_COMMAND_LIST_TYPE_COPY) {
+				ID3D12CommandList* pLists[] = { pPass->getList() };
+				pCopyQueue->ExecuteCommandLists(1, pLists);
+			}
+			else if (listType == D3D12_COMMAND_LIST_TYPE_COMPUTE) {
+				ID3D12CommandList* pLists[] = { pPass->getList() };
+				pComputeQueue->ExecuteCommandLists(1, pLists);
+			}
 		}
 
 		void frame() {

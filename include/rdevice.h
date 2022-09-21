@@ -7,6 +7,8 @@
 
 namespace rgf {
 
+	struct rpass;
+
 	struct rdeviceDesc {
 		HWND mHwnd = NULL;
 		uint32 mWidth = 800;
@@ -16,6 +18,7 @@ namespace rgf {
 	struct rdevice : public robject {
 		virtual ID3D12Device* getDevice() const = 0;
 		virtual IDXGISwapChain* getSwapChain() const = 0;
+		virtual void executePass(rpass* pPass) = 0;
 		virtual void frame() = 0;
 	};
 

@@ -6,8 +6,7 @@ add_library(rgf SHARED
 	"rgf.cpp"
 	"rwindow.cpp"
 	"rdevice.cpp"
-	"post_vs_shader.h"
-	"post_ps_shader.h"
+	"rpass.cpp"
 )
 set_property(TARGET rgf PROPERTY CXX_STANDARD 20)
 target_include_directories(rgf PUBLIC "${PROJECT_SOURCE_DIR}/include")
