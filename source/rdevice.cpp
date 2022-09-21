@@ -102,9 +102,15 @@ namespace rgf {
 			pCopyQueue = getQueue(pDevice, D3D12_COMMAND_LIST_TYPE_COPY);
 			pComputeQueue = getQueue(pDevice, D3D12_COMMAND_LIST_TYPE_COMPUTE);
 			pSwapChain = _getSwapChain(pGraphicsQueue, pDesc->mHwnd, pDesc->mWidth, pDesc->mHeight);
-			mFenceValue = 1;
-			pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence));
-			mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+			mGFenceValue = 1;
+			pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pGFence));
+			mGFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+			mCopyFenceValue = 1;
+			pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pCopyFence));
+			mCopyFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+			mComputeFenceValue = 1;
+			pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pComputeFence));
+			mComputeFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 			
 			D3D12MA::ALLOCATOR_DESC allocatorDesc{};
 			allocatorDesc.Flags = D3D12MA::ALLOCATOR_FLAG_NONE;
@@ -116,11 +122,17 @@ namespace rgf {
 		}
 
 		~RDevice() {
-			_wait();
+			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
+			_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
+			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
 
 			pAllocator->Release();
-			CloseHandle(mFenceEvent);
-			pFence->Release();
+			CloseHandle(mComputeFenceEvent);
+			pComputeFence->Release();
+			CloseHandle(mCopyFenceEvent);
+			pCopyFence->Release();
+			CloseHandle(mGFenceEvent);
+			pGFence->Release();
 			pSwapChain->Release();
 			pComputeQueue->Release();
 			pCopyQueue->Release();
@@ -159,19 +171,20 @@ namespace rgf {
 
 		void frame() {
 			pSwapChain->Present(1, 0);
-			_wait();
+			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
+			_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
+			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
 		}
 
-		void _wait() {
-			const UINT64 fence = mFenceValue;
-			pGraphicsQueue->Signal(pFence, fence);
-			mFenceValue++;
+		void _wait(uint64& fenceValue, ID3D12CommandQueue* pQueue, ID3D12Fence* pFence, HANDLE fenceEvent) {
+			const uint64 fence = fenceValue;
+			pQueue->Signal(pFence, fence);
+			fenceValue++;
 
-			// Wait until the previous frame is finished.
 			if (pFence->GetCompletedValue() < fence)
 			{
-				pFence->SetEventOnCompletion(fence, mFenceEvent);
-				WaitForSingleObject(mFenceEvent, INFINITE);
+				pFence->SetEventOnCompletion(fence, fenceEvent);
+				WaitForSingleObject(fenceEvent, INFINITE);
 			}
 		}
 
@@ -182,9 +195,15 @@ namespace rgf {
 		ID3D12CommandQueue* pComputeQueue;
 		IDXGISwapChain4* pSwapChain;
 
-		UINT64 mFenceValue;
-		ID3D12Fence* pFence;
-		HANDLE mFenceEvent;
+		uint64 mGFenceValue;
+		ID3D12Fence* pGFence;
+		HANDLE mGFenceEvent;
+		uint64 mCopyFenceValue;
+		ID3D12Fence* pCopyFence;
+		HANDLE mCopyFenceEvent;
+		uint64 mComputeFenceValue;
+		ID3D12Fence* pComputeFence;
+		HANDLE mComputeFenceEvent;
 
 		D3D12MA::Allocator* pAllocator;
 	};
