@@ -1,6 +1,7 @@
 #pragma once
 #include "define.h"
 #include "robject.h"
+
 #include <Windows.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -17,8 +18,6 @@ namespace rgf {
 	struct rdevice : public robject {
 		virtual ID3D12Device* getDevice() const = 0;
 		virtual IDXGISwapChain* getSwapChain() const = 0;
-		virtual void setSkyLightDirection(float x, float y, float z) = 0;
-		virtual void setSkyLightIntensity(float intensity) = 0;
 		virtual void frame() = 0;
 	};
 
