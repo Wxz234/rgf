@@ -1,4 +1,3 @@
-#include <Windows.h>
 #include "rgf.h"
 
 LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {

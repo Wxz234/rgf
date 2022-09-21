@@ -27,7 +27,7 @@ namespace rgf {
 		return pQueue;
 	}
 
-	IDXGISwapChain4* _getSwapChain(ID3D12CommandQueue* pQueue, HWND hwnd, uint32_t w, uint32_t h) {
+	IDXGISwapChain4* _getSwapChain(ID3D12CommandQueue* pQueue, HWND hwnd, uint32 w, uint32 h) {
 		IDXGIFactory7* pFactory;
 #ifdef _DEBUG
 		CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&pFactory));

@@ -1,17 +1,17 @@
 #pragma once
 #include "define.h"
 #include "robject.h"
-#include <Windows.h>
-#include <cstdint>
+
 #include <string>
 #include <functional>
 #include <utility>
+
 namespace rgf {
 
 	struct rwindowDesc {
 		std::wstring mTitle;
-		uint32_t mWidth = 800;
-		uint32_t mHeight = 600;
+		uint32 mWidth = 800;
+		uint32 mHeight = 600;
 		HINSTANCE mHinstance = NULL;
 		WNDPROC pFunction = NULL;
 	};
