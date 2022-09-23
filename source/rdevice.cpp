@@ -153,6 +153,10 @@ namespace rgf {
 			return pSwapChain;
 		}
 
+		void* getResourceAllocator() const {
+			return pAllocator;
+		}
+
 		void executePass(rpass* pPass) {
 			auto listType = pPass->getList()->GetType();
 			if (listType == D3D12_COMMAND_LIST_TYPE_DIRECT) {

@@ -18,6 +18,7 @@ namespace rgf {
 	struct rdevice : public robject {
 		virtual ID3D12Device* getDevice() const = 0;
 		virtual IDXGISwapChain* getSwapChain() const = 0;
+		virtual void* getResourceAllocator() const = 0;
 		virtual void executePass(rpass* pPass) = 0;
 		virtual void frame() = 0;
 	};
