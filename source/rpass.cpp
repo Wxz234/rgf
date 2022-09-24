@@ -7,6 +7,9 @@
 
 #include <DirectXMath.h>
 
+#define GBUFFER_MATRIX_SIZE 256
+#define GBUFFER_SKYLIGHT_SIZE 256
+
 namespace rgf {
 	struct GBufferPass : public gbufferPass {
 		GBufferPass(gbufferPassDesc* pDesc) {
@@ -56,16 +59,16 @@ namespace rgf {
 
 			D3D12MA::ALLOCATION_DESC allocDesc{};
 			allocDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
-			CD3DX12_RESOURCE_DESC MatrixDesc = CD3DX12_RESOURCE_DESC::Buffer(_getConstantBufferSize(sizeof(GBufferMatrix)));
-			pAllocator->CreateResource(&allocDesc, &MatrixDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &pGBufferMatrix, IID_NULL, nullptr);
-			CD3DX12_RESOURCE_DESC LightDesc = CD3DX12_RESOURCE_DESC::Buffer(_getConstantBufferSize(sizeof(GBufferLight)));
-			pAllocator->CreateResource(&allocDesc, &LightDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &pGBufferLight, IID_NULL, nullptr);
+			CD3DX12_RESOURCE_DESC matrixDesc = CD3DX12_RESOURCE_DESC::Buffer(GBUFFER_MATRIX_SIZE);
+			pAllocator->CreateResource(&allocDesc, &matrixDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &pGBufferMatrix, IID_NULL, nullptr);
+			CD3DX12_RESOURCE_DESC lightDesc = CD3DX12_RESOURCE_DESC::Buffer(GBUFFER_SKYLIGHT_SIZE);
+			pAllocator->CreateResource(&allocDesc, &lightDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &pGBufferLight, IID_NULL, nullptr);
 			pGBufferMatrix->GetResource()->Map(0, 0, &pGBufferMatrixData);
 			pGBufferLight->GetResource()->Map(0, 0, &pGBufferLightData);
 			// todo
 			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
 			cbvDesc.BufferLocation = pGBufferMatrix->GetResource()->GetGPUVirtualAddress();
-			cbvDesc.SizeInBytes = _getConstantBufferSize(sizeof(GBufferMatrix));
+			cbvDesc.SizeInBytes = GBUFFER_MATRIX_SIZE;
 			//pDevice->CreateConstantBufferView(&cbvDesc,)
 		}
 
@@ -105,6 +108,17 @@ namespace rgf {
 			mLightDirAndintensity.w = intensity;
 		}
 
+		uint64 _getConstantBufferSize(uint64 size) {
+			if (size == 0) {
+				return 256;
+			}
+			auto t = size / 256;
+			if (size % 256 == 0) {
+				return t * 256;
+			}
+			return (t + 1) * 256;
+		}
+
 		ID3D12Device* pDevice;
 
 		ID3D12CommandAllocator* pGBufferAllocator;
@@ -120,26 +134,10 @@ namespace rgf {
 		void* pGBufferLightData;
 
 		DirectX::XMFLOAT4 mLightDirAndintensity;
-
-		struct GBufferMatrix {
-			DirectX::XMFLOAT4X4 MVP;
-			DirectX::XMFLOAT4X4 WorldInvTranspose;
-		};
-
-		struct GBufferLight {
-			DirectX::XMFLOAT4 DirectionAndIntensity;
-		};
-
-		uint64 _getConstantBufferSize(uint64 size) {
-			if (size == 0) {
-				return 256;
-			}
-			auto t = size / 256;
-			if (size % 256 == 0) {
-				return t * 256;
-			}
-			return (t + 1) * 256;
-		}
+		DirectX::XMFLOAT4X4 M;
+		DirectX::XMFLOAT4X4 V;
+		DirectX::XMFLOAT4X4 P;
+		DirectX::XMFLOAT4X4 WorldInvTranspose;
 	};
 
 	gbufferPass* create(gbufferPassDesc* pDesc) {
