@@ -19,6 +19,7 @@ namespace rgf {
 		virtual ID3D12Device* getDevice() const = 0;
 		virtual IDXGISwapChain* getSwapChain() const = 0;
 		virtual void* getResourceAllocator() const = 0;
+		virtual void* getDescriptorManager() const = 0;
 		virtual void executePass(rpass* pPass) = 0;
 		virtual void frame() = 0;
 	};

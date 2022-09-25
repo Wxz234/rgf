@@ -1,6 +1,7 @@
 #include "rdevice.h"
 #include "rpass.h"
 #include "D3D12MemAlloc.h"
+#include "descriptor.h"
 
 #include <stdexcept>
 
@@ -119,6 +120,8 @@ namespace rgf {
 			allocatorDesc.pDevice = pDevice;
 			allocatorDesc.PreferredBlockSize = 0;
 			D3D12MA::CreateAllocator(&allocatorDesc, &pAllocator);
+
+			pdescriptorManager = createDescriptorManager(pDevice);
 		}
 
 		~RDevice() {
@@ -126,6 +129,7 @@ namespace rgf {
 			_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
 			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
 
+			removeObject(pdescriptorManager);
 			pAllocator->Release();
 			CloseHandle(mComputeFenceEvent);
 			pComputeFence->Release();
@@ -155,6 +159,10 @@ namespace rgf {
 
 		void* getResourceAllocator() const {
 			return pAllocator;
+		}
+
+		void* getDescriptorManager() const {
+			return pdescriptorManager;
 		}
 
 		void executePass(rpass* pPass) {
@@ -210,6 +218,7 @@ namespace rgf {
 		HANDLE mComputeFenceEvent;
 
 		D3D12MA::Allocator* pAllocator;
+		descriptorManager* pdescriptorManager;
 	};
 
 	rdevice* create(rdeviceDesc* pDesc) {
