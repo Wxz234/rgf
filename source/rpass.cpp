@@ -3,8 +3,8 @@
 #include "cmdList.h"
 
 namespace rgf {
-	struct GBufferPass : public gbufferPass {
-		GBufferPass(gbufferPassDesc* pDesc) {
+	struct GBufferPass : public gBufferPass {
+		GBufferPass(gBufferPassDesc* pDesc) {
 			pDevice = pDesc->pDevice->getDevice();
 		}
 
@@ -50,7 +50,7 @@ namespace rgf {
 		ID3D12Device* pDevice;
 	};
 
-	gbufferPass* create(gbufferPassDesc* pDesc) {
+	gBufferPass* create(gBufferPassDesc* pDesc) {
 		return new GBufferPass(pDesc);
 	}
 }

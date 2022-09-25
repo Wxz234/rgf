@@ -12,16 +12,16 @@ namespace rgf {
 		virtual void close() = 0;
 	};
 
-	struct gbufferPassDesc {
+	struct gBufferPassDesc {
 		rdevice* pDevice = nullptr;
 		uint32 mWidth = 800;
 		uint32 mHeight = 600;
 	};
 
-	struct gbufferPass : public rpass {
+	struct gBufferPass : public rpass {
 		virtual void updateSkyLightDirection(float x, float y, float z) = 0;
 		virtual void updateSkyLightIntensity(float intensity) = 0;
 	};
 
-	RGF_API gbufferPass* create(gbufferPassDesc* pDesc);
+	RGF_API gBufferPass* create(gBufferPassDesc* pDesc);
 }
