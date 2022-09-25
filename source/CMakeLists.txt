@@ -7,8 +7,8 @@ add_library(rgf SHARED
 	"rwindow.cpp"
 	"rdevice.cpp"
 	"rpass.cpp"
-	"pass.h"
 	"descriptor.h"
+	"cmdList.h"
 )
 set_property(TARGET rgf PROPERTY CXX_STANDARD 20)
 target_include_directories(rgf PUBLIC "${PROJECT_SOURCE_DIR}/include")
