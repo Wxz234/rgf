@@ -1,6 +1,11 @@
 #include "rgf.h"
 
+LRESULT _TEST(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+    if (_TEST(hWnd, message, wParam, lParam))
+        return true;
     if (message == WM_DESTROY) {
         PostQuitMessage(0);
         return 0;

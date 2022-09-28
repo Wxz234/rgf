@@ -2,6 +2,12 @@
 set_property(TARGET D3D12MA PROPERTY IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/third/bin/D3D12MA.dll")
 set_property(TARGET D3D12MA PROPERTY IMPORTED_IMPLIB "${PROJECT_SOURCE_DIR}/third/lib/D3D12MA.lib")
 
+
+file(GLOB_RECURSE imgui
+    "third/imgui/*.cpp"
+	"third/imgui/*.h"
+)
+
 add_library(rgf SHARED 
 	"rgf.cpp"
 	"rwindow.cpp"
@@ -9,7 +15,11 @@ add_library(rgf SHARED
 	"rpass.cpp"
 	"descriptor.h"
 	"cmdList.h"
+	${imgui}
 )
+
+source_group("imgui" FILES ${imgui})
+
 set_property(TARGET rgf PROPERTY CXX_STANDARD 20)
 target_include_directories(rgf PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_include_directories(rgf PRIVATE "${PROJECT_SOURCE_DIR}/third/include")
