@@ -330,9 +330,3 @@ namespace rgf {
 		return new RDevice(pDesc);
 	}
 }
-
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-RGF_API LRESULT _TEST(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-	return ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
-}

@@ -13,6 +13,7 @@ add_library(rgf SHARED
 	"rwindow.cpp"
 	"rdevice.cpp"
 	"rpass.cpp"
+	"rtexture.cpp"
 	"descriptor.h"
 	"cmdList.h"
 	${imgui}
