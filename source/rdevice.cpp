@@ -1,5 +1,6 @@
 #include "rdevice.h"
 #include "rpass.h"
+#include "rtexture.h"
 #include "descriptor.h"
 #include "cmdList.h"
 
@@ -242,6 +243,10 @@ namespace rgf {
 				ID3D12CommandList* pLists[] = { pPass->getList() };
 				pComputeQueue->ExecuteCommandLists(1, pLists);
 			}
+		}
+
+		void drawTexture(rtexture* pTexture) {
+
 		}
 
 		void frame() {

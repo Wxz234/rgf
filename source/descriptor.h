@@ -95,6 +95,10 @@ namespace rgf {
 			}
 		}
 
+		void remove(uint32 index) {
+			mState[index].IsAssigned = false;
+		}
+
 		void update() {
 			for (auto& state : mState) {
 				if (state.IsDynamic) {

@@ -22,6 +22,7 @@ namespace rgf {
 		virtual void* getResourceAllocator() const = 0;
 		virtual void* getDescriptorManager() const = 0;
 		virtual void executePass(rpass* pPass) = 0;
+		virtual void drawTexture(rtexture* pTexture) = 0;
 		virtual void frame() = 0;
 	};
 
