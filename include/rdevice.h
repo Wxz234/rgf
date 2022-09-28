@@ -8,6 +8,7 @@
 namespace rgf {
 
 	struct rpass;
+	struct rtexture;
 
 	struct rdeviceDesc {
 		HWND mHwnd = NULL;
