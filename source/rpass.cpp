@@ -5,13 +5,11 @@
 namespace rgf {
 	struct GBufferPass : public gBufferPass {
 		GBufferPass(gBufferPassDesc* pDesc) {
-			pDevice = pDesc->pDevice->getDevice();
-			pList = createCmdList(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
-			pDescriptorManager = (descriptorManager*)pDesc->pDevice->getDescriptorManager();
+
 		}
 
 		~GBufferPass() {
-			removeObject(pList);
+			//removeObject(pList);
 		}
 
 		void release() {
@@ -19,15 +17,15 @@ namespace rgf {
 		}
 
 		ID3D12CommandList* getList() const {
-			return pList->getList();
+			return nullptr;
 		}
 
 		void open() {
-			pList->open(nullptr);
+			//pList->open(nullptr);
 		}
 
 		void close() {
-			pList->close();
+			//pList->close();
 		}
 
 		void updateSkyLightDirection(float x, float y, float z) {
@@ -49,9 +47,6 @@ namespace rgf {
 			return (t + 1) * 256;
 		}
 
-		ID3D12Device* pDevice;
-		cmdList* pList;
-		descriptorManager* pDescriptorManager;
 	};
 
 	gBufferPass* create(gBufferPassDesc* pDesc) {
