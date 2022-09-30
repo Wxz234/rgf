@@ -247,46 +247,10 @@ namespace rgf {
 		}
 
 		void frame() {
-
-			ImGui_ImplDX12_NewFrame();
-			ImGui_ImplWin32_NewFrame();
-			ImGui::NewFrame();
-			ImGui::Begin("123");
-			ImGui::End();
-			ImGui::Render();
-
-			auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
-			mFrameLists[frameIndex]->open(nullptr);
-
-			auto pFrameList = mFrameLists[frameIndex]->getList();
-			ID3D12GraphicsCommandList* pGraphicsFrameList;
-			pFrameList->QueryInterface(&pGraphicsFrameList);
-			D3D12_RESOURCE_BARRIER barrier = {};
-			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			barrier.Transition.pResource = mFrameResource[frameIndex];
-			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			pGraphicsFrameList->ResourceBarrier(1, &barrier);
-
-			pGraphicsFrameList->OMSetRenderTargets(1, &mFrameRTVHandle[frameIndex], FALSE, NULL);
-			pGraphicsFrameList->SetDescriptorHeaps(1, &pImguiHeap);
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), pGraphicsFrameList);
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-			pGraphicsFrameList->ResourceBarrier(1, &barrier);
-
-			mFrameLists[frameIndex]->close();
-
-			pGraphicsQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&pGraphicsFrameList);
-
 			pSwapChain->Present(1, 0);
 			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
 			_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
 			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
-
-			pGraphicsFrameList->Release();
 		}
 
 		void _wait(uint64& fenceValue, ID3D12CommandQueue* pQueue, ID3D12Fence* pFence, HANDLE fenceEvent) {
