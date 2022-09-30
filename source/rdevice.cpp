@@ -167,10 +167,7 @@ namespace rgf {
 			ImGui::CreateContext();
 			ImGuiIO& io = ImGui::GetIO(); (void)io;
 			ImGui_ImplWin32_Init(pDesc->mHwnd);
-			ImGui_ImplDX12_Init(pDevice, FRAME_COUNT,
-				DXGI_FORMAT_R8G8B8A8_UNORM, pImguiHeap,
-				pImguiHeap->GetCPUDescriptorHandleForHeapStart(),
-				pImguiHeap->GetGPUDescriptorHandleForHeapStart());
+			ImGui_ImplDX12_Init(pDevice, FRAME_COUNT, DXGI_FORMAT_R8G8B8A8_UNORM, pImguiHeap, pImguiHeap->GetCPUDescriptorHandleForHeapStart(), pImguiHeap->GetGPUDescriptorHandleForHeapStart());
 		}
 
 		~RDevice() {

@@ -13,7 +13,6 @@ namespace rgf {
 		uint32 mWidth = 800;
 		uint32 mHeight = 600;
 		HINSTANCE mHinstance = NULL;
-		WNDPROC pFunction = NULL;
 	};
 
 	struct rwindow : public robject {

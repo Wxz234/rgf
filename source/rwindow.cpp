@@ -1,5 +1,26 @@
 #include "rwindow.h"
+
+#include "third/imgui/imgui.h"
+#include "third/imgui/imgui_impl_win32.h"
+#include "third/imgui/imgui_impl_dx12.h"
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 namespace rgf {
+
+	LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+		if (ImGui_ImplWin32_WndProcHandler(hWnd,message,wParam, lParam)) {
+			return true;
+		}
+
+		if (message == WM_DESTROY) {
+			PostQuitMessage(0);
+			return 0;
+		}
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+
 	class RWindow : public rwindow {
 	public:
 		RWindow(rwindowDesc* pDesc) {
@@ -7,7 +28,7 @@ namespace rgf {
 			WNDCLASSEXW wcex{};
 			wcex.cbSize = sizeof(WNDCLASSEXW);
 			wcex.style = CS_HREDRAW | CS_VREDRAW;
-			wcex.lpfnWndProc = pDesc->pFunction;
+			wcex.lpfnWndProc = wndProc;
 			wcex.hInstance = pDesc->mHinstance;
 			wcex.hIcon = LoadIconW(pDesc->mHinstance, L"IDI_ICON");
 			wcex.hCursor = LoadCursorW(nullptr, IDC_ARROW);

@@ -1,13 +1,5 @@
 #include "rgf.h"
 
-LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    if (message == WM_DESTROY) {
-        PostQuitMessage(0);
-        return 0;
-    }
-    return DefWindowProc(hWnd, message, wParam, lParam);
-}
-
 void draw(rgf::rdevice *pDevice) {
     pDevice->frame();
 }
@@ -19,7 +11,6 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     rwindow_desc.mWidth = width;
     rwindow_desc.mHeight = height;
     rwindow_desc.mHinstance = hInstance;
-    rwindow_desc.pFunction = wndProc;
     auto rwindow = rgf::create(&rwindow_desc);
 
     rgf::rdeviceDesc rdevice_desc;
