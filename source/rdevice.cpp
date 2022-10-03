@@ -264,6 +264,9 @@ namespace rgf {
 		}
 
 		void frame() {
+
+			pdescriptorManager->update();
+
 			_openFrame();
 			_closeFrame();
 		}
@@ -283,37 +286,13 @@ namespace rgf {
 		
 		void _openFrame() {
 			auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
-			//mFrameGLists[frameIndex]->open(nullptr);
-		}
-
-		void _closeFrame() {
-
-			ImGui_ImplDX12_NewFrame();
-			ImGui_ImplWin32_NewFrame();
-			ImGui::NewFrame();
-
-			ImGui::SetNextWindowPos(ImVec2(0, 0));
-			ImGui::SetNextWindowSize(ImVec2(mWidth, mHeight));
-			ImGui::Begin("test", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground);
-
-			ImGui::Text("this is test");
-
-			ImDrawList* DrawList = ImGui::GetWindowDrawList();
-
-			auto& io = ImGui::GetIO();
-			ImFont* pp;
-			DrawList->AddText(nullptr, 24, ImVec2((float)55, (float)77), 0xFFFFFFFF, "2213413");
-			DrawList->AddText(ImVec2((float)33, (float)44), 0xFFFFFFFF, "123333");
-
-			ImGui::End();
-			ImGui::Render();
-
-			auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
-			mFrameGLists[frameIndex]->open(nullptr);
 
 			auto pFrameList = mFrameGLists[frameIndex]->getList();
 			ID3D12GraphicsCommandList* pGraphicsFrameList;
 			pFrameList->QueryInterface(&pGraphicsFrameList);
+
+			mFrameGLists[frameIndex]->open(nullptr);
+
 			D3D12_RESOURCE_BARRIER barrier = {};
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -323,24 +302,47 @@ namespace rgf {
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			pGraphicsFrameList->ResourceBarrier(1, &barrier);
 
-			pGraphicsFrameList->OMSetRenderTargets(1, &mFrameRTVHandle[frameIndex], FALSE, NULL);
-			float color[4]{ 1.f, 0.f, 1.f ,1.f };
-			pGraphicsFrameList->ClearRenderTargetView(mFrameRTVHandle[frameIndex], color, 0, 0);
-			pGraphicsFrameList->SetDescriptorHeaps(1, &pImguiHeap);
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), pGraphicsFrameList);
+			pGraphicsFrameList->Release();
+		}
+
+		void _closeFrame() {
+			auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
+
+			auto pFrameList = mFrameGLists[frameIndex]->getList();
+			ID3D12GraphicsCommandList* pGraphicsFrameList;
+			pFrameList->QueryInterface(&pGraphicsFrameList);
+
+			D3D12_RESOURCE_BARRIER barrier = {};
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource = mFrameResource[frameIndex];
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 			pGraphicsFrameList->ResourceBarrier(1, &barrier);
+
+			pGraphicsFrameList->Release();
+
 			mFrameGLists[frameIndex]->close();
 
-			pGraphicsQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&pGraphicsFrameList);
+			pGraphicsQueue->ExecuteCommandLists(1, &pFrameList);
 
 			pSwapChain->Present(1, 0);
 			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
 			_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
 			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
+		}
 
-			pGraphicsFrameList->Release();
+		void _drawText() {
+			if (!mTextArray.empty()) {
+				ImGui_ImplDX12_NewFrame();
+				ImGui_ImplWin32_NewFrame();
+				ImGui::NewFrame();
+
+				ImGui::Render();
+			}
+
+			mTextArray.clear();
 		}
 
 		IDXGIAdapter* pAdapter;
@@ -369,14 +371,12 @@ namespace rgf {
 		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, FRAME_COUNT> mFrameRTVHandle;
 		std::array<ID3D12Resource *, FRAME_COUNT> mFrameResource;
 
-		
-
 		uint32 mWidth;
 		uint32 mHeight;
 
 		struct Text {
 			std::string text;
-			float fontSize = 8;
+			float fontSize = 8.0f;
 			uint32 color = 0xFFFFFFFF;
 			float x = 0.f;
 			float y = 0.f;
