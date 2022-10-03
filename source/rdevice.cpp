@@ -1,8 +1,4 @@
 #include "rdevice.h"
-#include "rpass.h"
-#include "rtexture.h"
-#include "descriptor.h"
-#include "cmdList.h"
 
 #include "D3D12MemAlloc.h"
 #include "third/imgui/imgui.h"
@@ -11,9 +7,6 @@
 #include "third/imgui/imgui_impl_dx12.h"
 
 #include <stdexcept>
-#include <array>
-#include <vector>
-#include <string>
 
 #define FRAME_COUNT 2
 
@@ -101,6 +94,20 @@ namespace rgf {
 		return true;
 	}
 
+	D3D12MA::Allocator* getAllocator(IDXGIAdapter* pAdapter, ID3D12Device* pDevice) {
+		D3D12MA::ALLOCATOR_DESC allocatorDesc{};
+		allocatorDesc.Flags = D3D12MA::ALLOCATOR_FLAG_NONE;
+		allocatorDesc.pAdapter = pAdapter;
+		allocatorDesc.pAllocationCallbacks = nullptr;
+		allocatorDesc.pDevice = pDevice;
+		allocatorDesc.PreferredBlockSize = 0;
+
+		D3D12MA::Allocator* pAllocator;
+		D3D12MA::CreateAllocator(&allocatorDesc, &pAllocator);
+
+		return pAllocator;
+	}
+
 	struct RDevice : public rdevice {
 		RDevice(rdeviceDesc* pDesc) {
 			pAdapter = getAdapter();
@@ -128,52 +135,7 @@ namespace rgf {
 			pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pComputeFence));
 			mComputeFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 			
-			D3D12MA::ALLOCATOR_DESC allocatorDesc{};
-			allocatorDesc.Flags = D3D12MA::ALLOCATOR_FLAG_NONE;
-			allocatorDesc.pAdapter = pAdapter;
-			allocatorDesc.pAllocationCallbacks = nullptr;
-			allocatorDesc.pDevice = pDevice;
-			allocatorDesc.PreferredBlockSize = 0;
-			D3D12MA::CreateAllocator(&allocatorDesc, &pAllocator);
-
-			pdescriptorManager = createDescriptorManager(pDevice);
-
-			for (int i = 0; i < FRAME_COUNT; ++i) {
-				mFrameGLists[i] = createCmdList(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
-			}
-
-			{
-				D3D12_DESCRIPTOR_HEAP_DESC desc{};
-				desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-				desc.NumDescriptors = FRAME_COUNT;
-				desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-				pDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&pFrameRTVHeap));
-
-				SIZE_T rtvDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-				D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = pFrameRTVHeap->GetCPUDescriptorHandleForHeapStart();
-				for (UINT i = 0; i < FRAME_COUNT; i++)
-				{
-					mFrameRTVHandle[i] = rtvHandle;
-					rtvHandle.ptr += rtvDescriptorSize;
-
-					ID3D12Resource* pBackBuffer = NULL;
-					pSwapChain->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
-					pDevice->CreateRenderTargetView(pBackBuffer, NULL, mFrameRTVHandle[i]);
-					mFrameResource[i] = pBackBuffer;
-				}
-			}
-
-			D3D12_DESCRIPTOR_HEAP_DESC heapDesc{};
-			heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-			heapDesc.NumDescriptors = 1;
-			heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-			pDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&pImguiHeap));
-
-			IMGUI_CHECKVERSION();
-			ImGui::CreateContext();
-			ImGuiIO& io = ImGui::GetIO(); (void)io;
-			ImGui_ImplWin32_Init(pDesc->mHwnd);
-			ImGui_ImplDX12_Init(pDevice, FRAME_COUNT, DXGI_FORMAT_R8G8B8A8_UNORM, pImguiHeap, pImguiHeap->GetCPUDescriptorHandleForHeapStart(), pImguiHeap->GetGPUDescriptorHandleForHeapStart());
+			pAllocator = getAllocator(pAdapter, pDevice);
 		}
 
 		~RDevice() {
@@ -181,22 +143,6 @@ namespace rgf {
 			_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
 			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
 
-			ImGui_ImplDX12_Shutdown();
-			ImGui_ImplWin32_Shutdown();
-			ImGui::DestroyContext();
-			pImguiHeap->Release();
-
-			for (int i = 0; i < FRAME_COUNT; ++i) {
-				mFrameResource[i]->Release();
-			}
-
-			pFrameRTVHeap->Release();
-
-			for (int i = 0; i < FRAME_COUNT; ++i) {
-				removeObject(mFrameGLists[i]);
-			}
-
-			removeObject(pdescriptorManager);
 			pAllocator->Release();
 			CloseHandle(mComputeFenceEvent);
 			pComputeFence->Release();
@@ -228,45 +174,42 @@ namespace rgf {
 			return pAllocator;
 		}
 
-		void* getDescriptorManager() const {
-			return pdescriptorManager;
-		}
+		//void* getDescriptorManager() const {
+		//	return pdescriptorManager;
+		//}
 
-		void executePass(rpass* pPass) {
-			auto listType = pPass->getList()->GetType();
-			if (listType == D3D12_COMMAND_LIST_TYPE_DIRECT) {
-				ID3D12CommandList* pLists[] = { pPass->getList() };
-				pGraphicsQueue->ExecuteCommandLists(1, pLists);
-			}
-			else if (listType == D3D12_COMMAND_LIST_TYPE_COPY) {
-				ID3D12CommandList* pLists[] = { pPass->getList() };
-				pCopyQueue->ExecuteCommandLists(1, pLists);
-			}
-			else if (listType == D3D12_COMMAND_LIST_TYPE_COMPUTE) {
-				ID3D12CommandList* pLists[] = { pPass->getList() };
-				pComputeQueue->ExecuteCommandLists(1, pLists);
-			}
-		}
+		//void executePass(rpass* pPass) {
+		//	auto listType = pPass->getList()->GetType();
+		//	if (listType == D3D12_COMMAND_LIST_TYPE_DIRECT) {
+		//		ID3D12CommandList* pLists[] = { pPass->getList() };
+		//		pGraphicsQueue->ExecuteCommandLists(1, pLists);
+		//	}
+		//	else if (listType == D3D12_COMMAND_LIST_TYPE_COPY) {
+		//		ID3D12CommandList* pLists[] = { pPass->getList() };
+		//		pCopyQueue->ExecuteCommandLists(1, pLists);
+		//	}
+		//	else if (listType == D3D12_COMMAND_LIST_TYPE_COMPUTE) {
+		//		ID3D12CommandList* pLists[] = { pPass->getList() };
+		//		pComputeQueue->ExecuteCommandLists(1, pLists);
+		//	}
+		//}
 
-		void drawTexture(rtexture* pTexture) {
+		//void drawTexture(rtexture* pTexture) {
 
-		}
+		//}
 
-		void drawText(const std::string_view text, float fontSize, float x, float y, uint32 color) {
-			Text mytext;
-			mytext.text = text;
-			mytext.fontSize = fontSize;
-			mytext.x = x;
-			mytext.y = y;
-			mytext.color = color;
+		//void drawText(const std::string_view text, float fontSize, float x, float y, uint32 color) {
+		//	Text mytext;
+		//	mytext.text = text;
+		//	mytext.fontSize = fontSize;
+		//	mytext.x = x;
+		//	mytext.y = y;
+		//	mytext.color = color;
 
-			mTextArray.push_back(mytext);
-		}
+		//	mTextArray.push_back(mytext);
+		//}
 
 		void frame() {
-
-			pdescriptorManager->update();
-
 			_openFrame();
 			_closeFrame();
 		}
@@ -285,47 +228,47 @@ namespace rgf {
 
 		
 		void _openFrame() {
-			auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
+			//auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
 
-			auto pFrameList = mFrameGLists[frameIndex]->getList();
-			ID3D12GraphicsCommandList* pGraphicsFrameList;
-			pFrameList->QueryInterface(&pGraphicsFrameList);
+			//auto pFrameList = mFrameGLists[frameIndex]->getList();
+			//ID3D12GraphicsCommandList* pGraphicsFrameList;
+			//pFrameList->QueryInterface(&pGraphicsFrameList);
 
-			mFrameGLists[frameIndex]->open(nullptr);
+			//mFrameGLists[frameIndex]->open(nullptr);
 
-			D3D12_RESOURCE_BARRIER barrier = {};
-			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			barrier.Transition.pResource = mFrameResource[frameIndex];
-			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			pGraphicsFrameList->ResourceBarrier(1, &barrier);
+			//D3D12_RESOURCE_BARRIER barrier = {};
+			//barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			//barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			//barrier.Transition.pResource = mFrameResource[frameIndex];
+			//barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			//barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+			//barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			//pGraphicsFrameList->ResourceBarrier(1, &barrier);
 
-			pGraphicsFrameList->Release();
+			//pGraphicsFrameList->Release();
 		}
 
 		void _closeFrame() {
-			auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
+			//auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
 
-			auto pFrameList = mFrameGLists[frameIndex]->getList();
-			ID3D12GraphicsCommandList* pGraphicsFrameList;
-			pFrameList->QueryInterface(&pGraphicsFrameList);
+			//auto pFrameList = mFrameGLists[frameIndex]->getList();
+			//ID3D12GraphicsCommandList* pGraphicsFrameList;
+			//pFrameList->QueryInterface(&pGraphicsFrameList);
 
-			D3D12_RESOURCE_BARRIER barrier = {};
-			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			barrier.Transition.pResource = mFrameResource[frameIndex];
-			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-			pGraphicsFrameList->ResourceBarrier(1, &barrier);
+			//D3D12_RESOURCE_BARRIER barrier = {};
+			//barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			//barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			//barrier.Transition.pResource = mFrameResource[frameIndex];
+			//barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			//barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			//barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+			//pGraphicsFrameList->ResourceBarrier(1, &barrier);
 
-			pGraphicsFrameList->Release();
+			//pGraphicsFrameList->Release();
 
-			mFrameGLists[frameIndex]->close();
+			//mFrameGLists[frameIndex]->close();
 
-			pGraphicsQueue->ExecuteCommandLists(1, &pFrameList);
+			//pGraphicsQueue->ExecuteCommandLists(1, &pFrameList);
 
 			pSwapChain->Present(1, 0);
 			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
@@ -333,17 +276,8 @@ namespace rgf {
 			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
 		}
 
-		void _drawText() {
-			if (!mTextArray.empty()) {
-				ImGui_ImplDX12_NewFrame();
-				ImGui_ImplWin32_NewFrame();
-				ImGui::NewFrame();
-
-				ImGui::Render();
-			}
-
-			mTextArray.clear();
-		}
+		uint32 mWidth;
+		uint32 mHeight;
 
 		IDXGIAdapter* pAdapter;
 		ID3D12Device4* pDevice;
@@ -363,26 +297,6 @@ namespace rgf {
 		HANDLE mComputeFenceEvent;
 
 		D3D12MA::Allocator* pAllocator;
-		descriptorManager* pdescriptorManager;
-
-		ID3D12DescriptorHeap* pImguiHeap;
-		std::array<cmdList*, FRAME_COUNT> mFrameGLists;
-		ID3D12DescriptorHeap* pFrameRTVHeap;
-		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, FRAME_COUNT> mFrameRTVHandle;
-		std::array<ID3D12Resource *, FRAME_COUNT> mFrameResource;
-
-		uint32 mWidth;
-		uint32 mHeight;
-
-		struct Text {
-			std::string text;
-			float fontSize = 8.0f;
-			uint32 color = 0xFFFFFFFF;
-			float x = 0.f;
-			float y = 0.f;
-		};
-
-		std::vector<Text> mTextArray;
 	};
 
 	rdevice* create(rdeviceDesc* pDesc) {
