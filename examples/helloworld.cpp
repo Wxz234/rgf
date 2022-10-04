@@ -1,6 +1,7 @@
 #include "rgf.h"
 
 void draw(rgf::rdevice *pDevice) {
+    pDevice->drawText("123", 22, 33, 44, 0xFFFFFFFF);
     pDevice->frame();
 }
 

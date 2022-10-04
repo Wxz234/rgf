@@ -14,8 +14,8 @@ namespace rgf {
 			tempDevice->Release();
 		}
 		~cmdList() {
-			pAllocator->Release();
 			pList->Release();
+			pAllocator->Release();
 		}
 
 		void open(ID3D12PipelineState* pInitialState) {
@@ -27,7 +27,7 @@ namespace rgf {
 			pList->Close();
 		}
 
-		ID3D12CommandList* getList() const {
+		ID3D12GraphicsCommandList* getList() const {
 			return pList;
 		}
 
