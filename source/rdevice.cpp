@@ -145,13 +145,14 @@ namespace rgf {
 			_createSwapChainRes();
 			_createImgui(pDesc->mHwnd);
 			_createRTV();
+			_createDescriptorManager();
 		}
 
 		~RDevice() {
 			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
 			_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
 			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
-
+			_destroyDescriptorManager();
 			_destroyRTV();
 			_destroyImgui();
 			_destroySwapChainRes();
@@ -187,6 +188,10 @@ namespace rgf {
 			return pAllocator;
 		}
 
+		void* getDescriptorManager() const {
+			return pDescriptorManager;
+		}
+
 		uint32 getFrameIndex() const {
 			return pSwapChain->GetCurrentBackBufferIndex();
 		}
@@ -210,7 +215,7 @@ namespace rgf {
 
 		void frame() {
 			_updateState();
-			_openFrame();
+			_beginFrame();
 			_endFrame();
 		}
 
@@ -233,10 +238,12 @@ namespace rgf {
 
 				pImguiContext->bIsCalled = false;
 			}
+
+			pDescriptorManager->update();
 		}
 
 		
-		void _openFrame() {
+		void _beginFrame() {
 			auto frameIndex = getFrameIndex();
 
 			mFrameGraphicsList[frameIndex]->open(nullptr);
@@ -357,6 +364,14 @@ namespace rgf {
 			pFrameRTVHeap->Release();
 		}
 
+		void _createDescriptorManager() {
+			pDescriptorManager = createDescriptorManager(pDevice);
+		}
+
+		void _destroyDescriptorManager() {
+			removeObject(pDescriptorManager);
+		}
+
 		uint32 mWidth;
 		uint32 mHeight;
 
@@ -391,6 +406,8 @@ namespace rgf {
 			bool bIsCalled = false;
 		};
 		ImguiContext* pImguiContext;
+
+		descriptorManager* pDescriptorManager;
 	};
 
 	rdevice* create(rdeviceDesc* pDesc) {

@@ -18,6 +18,7 @@ namespace rgf {
 		virtual ID3D12Device* getDevice() const = 0;
 		virtual IDXGISwapChain* getSwapChain() const = 0;
 		virtual void* getResourceAllocator() const = 0;
+		virtual void* getDescriptorManager() const = 0;
 		virtual uint32 getFrameIndex() const = 0;
 		virtual void drawText(const std::string_view text, float fontSize, float x, float y, uint32 color) = 0;
 		virtual void frame() = 0;
