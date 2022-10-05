@@ -204,11 +204,11 @@ namespace rgf {
 
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::SetNextWindowSize(ImVec2(mWidth, mHeight));
-				ImGui::Begin("Text", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground);
-	
+				ImGui::Begin("Imgui", NULL, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs);
+
 				pImguiContext->bIsCalled = true;
 			}
-
+			ImGuiWindowFlags_NoDecoration;
 			ImDrawList* DrawList = ImGui::GetWindowDrawList();
 			DrawList->AddText(nullptr, fontSize, ImVec2(x, y), color, text.data());
 		}
@@ -235,8 +235,6 @@ namespace rgf {
 			if (pImguiContext->bIsCalled) {
 				ImGui::End();
 				ImGui::Render();
-
-				pImguiContext->bIsCalled = false;
 			}
 
 			pDescriptorManager->update();
@@ -264,9 +262,12 @@ namespace rgf {
 			auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
 
 			auto pGraphicsFrameList = mFrameGraphicsList[frameIndex]->getList();
+			if (pImguiContext->bIsCalled) {
+				pGraphicsFrameList->SetDescriptorHeaps(1, &pImguiContext->pImguiHeap);
+				ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), pGraphicsFrameList);
 
-			pGraphicsFrameList->SetDescriptorHeaps(1, &pImguiContext->pImguiHeap);
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), pGraphicsFrameList);
+				pImguiContext->bIsCalled = false;
+			}
 
 			D3D12_RESOURCE_BARRIER barrier = {};
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;

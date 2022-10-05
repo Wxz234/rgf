@@ -12,6 +12,8 @@ add_library(rgf SHARED
 	"rgf.cpp"
 	"rwindow.cpp"
 	"rdevice.cpp"
+	"rrendertarget.cpp"
+	"rresource.cpp"
 	${imgui}
 )
 

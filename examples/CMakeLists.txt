@@ -5,3 +5,11 @@ add_custom_command(TARGET example-00-helloworld POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:example-00-helloworld> $<TARGET_FILE_DIR:example-00-helloworld>
 	COMMAND_EXPAND_LISTS
 )
+
+add_executable(example-01-rendertarget WIN32 "rendertarget.cpp")
+set_property(TARGET example-01-rendertarget PROPERTY CXX_STANDARD 20)
+target_link_libraries(example-01-rendertarget PRIVATE rgf)
+add_custom_command(TARGET example-01-rendertarget POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:example-01-rendertarget> $<TARGET_FILE_DIR:example-01-rendertarget>
+	COMMAND_EXPAND_LISTS
+)
