@@ -199,8 +199,8 @@ namespace rgf {
 
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::SetNextWindowSize(ImVec2(mWidth, mHeight));
-				ImGui::Begin("test", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground);
-
+				ImGui::Begin("Text", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground);
+	
 				pImguiContext->bIsCalled = true;
 			}
 
@@ -211,18 +211,6 @@ namespace rgf {
 		void frame() {
 			_updateState();
 			_openFrame();
-
-			auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
-			mFrameGraphicsExecuteList[frameIndex]->open(nullptr);
-			auto list = mFrameGraphicsExecuteList[frameIndex]->getList();
-			list->OMSetRenderTargets(1, &mFrameRTVHandle[frameIndex], FALSE, NULL);
-			list->SetDescriptorHeaps(1, &pImguiContext->pImguiHeap);
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), list);
-
-			float cccc[4]{ 1,0.5,1,1 };
-			list->ClearRenderTargetView(mFrameRTVHandle[frameIndex], cccc, 0, 0);
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), list);
-			mFrameGraphicsExecuteList[frameIndex]->close();
 			_endFrame();
 		}
 
@@ -251,9 +239,9 @@ namespace rgf {
 		void _openFrame() {
 			auto frameIndex = getFrameIndex();
 
-			mFrameGraphicsStartList[frameIndex]->open(nullptr);
+			mFrameGraphicsList[frameIndex]->open(nullptr);
 
-			auto pGraphicsFrameList = mFrameGraphicsStartList[frameIndex]->getList();
+			auto pGraphicsFrameList = mFrameGraphicsList[frameIndex]->getList();
 			D3D12_RESOURCE_BARRIER barrier = {};
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -262,16 +250,16 @@ namespace rgf {
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			pGraphicsFrameList->ResourceBarrier(1, &barrier);
-			
-			mFrameGraphicsStartList[frameIndex]->close();
+			pGraphicsFrameList->OMSetRenderTargets(1, &mFrameRTVHandle[frameIndex], FALSE, NULL);
 		}
 
 		void _endFrame() {
 			auto frameIndex = pSwapChain->GetCurrentBackBufferIndex();
 
-			mFrameGraphicsEndList[frameIndex]->open(nullptr);
+			auto pGraphicsFrameList = mFrameGraphicsList[frameIndex]->getList();
 
-			auto pGraphicsFrameList = mFrameGraphicsEndList[frameIndex]->getList();
+			pGraphicsFrameList->SetDescriptorHeaps(1, &pImguiContext->pImguiHeap);
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), pGraphicsFrameList);
 
 			D3D12_RESOURCE_BARRIER barrier = {};
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -282,15 +270,13 @@ namespace rgf {
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 			pGraphicsFrameList->ResourceBarrier(1, &barrier);
 
-			mFrameGraphicsEndList[frameIndex]->close();
+			mFrameGraphicsList[frameIndex]->close();
 			
-			ID3D12CommandList* pLists[3] = { 
-				mFrameGraphicsStartList[frameIndex]->getList(),
-				mFrameGraphicsExecuteList[frameIndex]->getList(),
-				mFrameGraphicsEndList[frameIndex]->getList()
+			ID3D12CommandList* pLists[1] = { 
+				mFrameGraphicsList[frameIndex]->getList(),
 			};
 
-			pGraphicsQueue->ExecuteCommandLists(3, pLists);
+			pGraphicsQueue->ExecuteCommandLists(1, pLists);
 
 			pSwapChain->Present(1, 0);
 			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
@@ -299,25 +285,13 @@ namespace rgf {
 		}
 
 		void _createCmdList() {
-			for (auto &list : mFrameGraphicsStartList) {
-				list = createCmdList(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
-			}
-			for (auto &list : mFrameGraphicsEndList) {
-				list = createCmdList(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
-			}
-			for (auto& list : mFrameGraphicsExecuteList) {
+			for (auto &list : mFrameGraphicsList) {
 				list = createCmdList(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
 			}
 		}
 
 		void _destroyCmdList() {
-			for (auto &list : mFrameGraphicsStartList) {
-				removeObject(list);
-			}
-			for (auto &list : mFrameGraphicsEndList) {
-				removeObject(list);
-			}
-			for (auto& list : mFrameGraphicsExecuteList) {
+			for (auto &list : mFrameGraphicsList) {
 				removeObject(list);
 			}
 		}
@@ -405,9 +379,7 @@ namespace rgf {
 
 		D3D12MA::Allocator* pAllocator;
 
-		std::array<cmdList*, FRAME_COUNT> mFrameGraphicsStartList;
-		std::array<cmdList*, FRAME_COUNT> mFrameGraphicsEndList;
-		std::array<cmdList*, FRAME_COUNT> mFrameGraphicsExecuteList;
+		std::array<cmdList*, FRAME_COUNT> mFrameGraphicsList;
 
 		std::array<ID3D12Resource*, FRAME_COUNT> mSwapChainRes;
 
