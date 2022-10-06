@@ -21,9 +21,9 @@ namespace rgf {
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 
-	class RWindow : public rwindow {
+	class RWindow : public window {
 	public:
-		RWindow(rwindowDesc* pDesc) {
+		RWindow(windowDesc* pDesc) {
 
 			WNDCLASSEXW wcex{};
 			wcex.cbSize = sizeof(WNDCLASSEXW);
@@ -57,7 +57,7 @@ namespace rgf {
 		HWND mHwnd;
 	};
 
-	rwindow* create(rwindowDesc* pDesc) {
+	window* create(windowDesc* pDesc) {
 		return new RWindow(pDesc);
 	}
 }

@@ -8,14 +8,14 @@
 
 namespace rgf {
 
-	struct rwindowDesc {
+	struct windowDesc {
 		std::wstring mTitle;
 		uint32 mWidth = 800;
 		uint32 mHeight = 600;
 		HINSTANCE mHinstance = NULL;
 	};
 
-	struct rwindow : public object {
+	struct window : public object {
 		virtual HWND getHWND() const = 0;
 
 		template <typename Function, typename... Args>
@@ -33,5 +33,5 @@ namespace rgf {
 		}
 	};
 
-	RGF_API rwindow* create(rwindowDesc* pDesc);
+	RGF_API window* create(windowDesc* pDesc);
 }

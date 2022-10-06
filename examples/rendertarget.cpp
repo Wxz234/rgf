@@ -8,7 +8,7 @@ void draw(rgf::device* pDevice) {
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd) {
     constexpr unsigned width = 800, height = 600;
-    rgf::rwindowDesc window_desc;
+    rgf::windowDesc window_desc;
     window_desc.mTitle = L"TheAftermath";
     window_desc.mWidth = width;
     window_desc.mHeight = height;
@@ -26,7 +26,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     buffer_desc.mSize = 100;
     auto buffer = rgf::createBuffer(&buffer_desc);
 
-    rgf::rwindow::run(draw, device);
+    rgf::window::run(draw, device);
 
     rgf::removeObject(buffer);
     rgf::removeObject(device);
