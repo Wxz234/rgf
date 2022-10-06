@@ -8,7 +8,7 @@
 
 namespace rgf {
 
-	struct deviceDesc {
+	struct device_desc {
 		HWND mHwnd = NULL;
 		uint32 mWidth = 800;
 		uint32 mHeight = 600;
@@ -24,5 +24,5 @@ namespace rgf {
 		virtual void frame() = 0;
 	};
 
-	RGF_API device* create(deviceDesc* pDesc);
+	RGF_API device* create(device_desc* pDesc);
 }

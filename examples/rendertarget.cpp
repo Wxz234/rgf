@@ -15,11 +15,11 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     window_desc.mHinstance = hInstance;
     auto window = rgf::create(&window_desc);
 
-    rgf::deviceDesc device_desc;
-    device_desc.mWidth = width;
-    device_desc.mHeight = height;
-    device_desc.mHwnd = window->getHWND();
-    auto device = rgf::create(&device_desc);
+    rgf::device_desc deviceDesc;
+    deviceDesc.mWidth = width;
+    deviceDesc.mHeight = height;
+    deviceDesc.mHwnd = window->getHWND();
+    auto device = rgf::create(&deviceDesc);
 
     rgf::bufferDesc buffer_desc{};
     buffer_desc.pDevice = device;
