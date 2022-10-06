@@ -1,4 +1,4 @@
-#include "rresource.h"
+#include "resource.h"
 
 #include "D3D12MemAlloc.h"
 #include "d3dx12.h"

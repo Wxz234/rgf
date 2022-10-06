@@ -1,7 +1,7 @@
 #pragma once
 #include "define.h"
-#include "robject.h"
-#include "rwindow.h"
-#include "rdevice.h"
-#include "rrendertarget.h"
-#include "rresource.h"
+#include "object.h"
+#include "window.h"
+#include "device.h"
+#include "rendertarget.h"
+#include "resource.h"

@@ -10,10 +10,10 @@ file(GLOB_RECURSE imgui
 
 add_library(rgf SHARED 
 	"rgf.cpp"
-	"rwindow.cpp"
-	"rdevice.cpp"
-	"rrendertarget.cpp"
-	"rresource.cpp"
+	"window.cpp"
+	"device.cpp"
+	"rendertarget.cpp"
+	"resource.cpp"
 	${imgui}
 )
 

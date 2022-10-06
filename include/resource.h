@@ -1,7 +1,7 @@
 #pragma once
 #include "define.h"
-#include "robject.h"
-#include "rdevice.h"
+#include "object.h"
+#include "device.h"
 
 #include <d3d12.h>
 #include <dxgiformat.h>
