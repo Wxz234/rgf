@@ -8,7 +8,7 @@
 
 namespace rgf {
 
-	struct rresource : public object {
+	struct resource : public object {
 		virtual ID3D12Resource* getResource() const = 0;
 	};
 
@@ -19,7 +19,7 @@ namespace rgf {
 		D3D12_RESOURCE_STATES mStartState = D3D12_RESOURCE_STATE_COMMON;
 	};
 
-	struct rbuffer : public rresource {
+	struct rbuffer : public resource {
 		virtual uint32 getSize() const = 0;
 	};
 
@@ -34,7 +34,7 @@ namespace rgf {
 		D3D12_RESOURCE_STATES mStartState = D3D12_RESOURCE_STATE_COMMON;
 	};
 
-	struct rtexture : public rresource {
+	struct rtexture : public resource {
 		virtual DXGI_FORMAT getFormat() const = 0;
 	};
 
