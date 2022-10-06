@@ -35,6 +35,7 @@ namespace rgf {
 		}
 
 		~RenderTarget() {
+			pRTV->Release();
 			pAllocation->Release();
 			pResource->Release();
 		}

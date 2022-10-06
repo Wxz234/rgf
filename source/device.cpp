@@ -454,7 +454,6 @@ namespace rgf {
 
 		struct ImguiContext {
 			ID3D12DescriptorHeap* pImguiHeap = nullptr;
-			uint32 mSRV_Index = 0;
 			bool bIsCalled = false;
 		};
 		ImguiContext* pImguiContext;
