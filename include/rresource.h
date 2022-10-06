@@ -19,11 +19,11 @@ namespace rgf {
 		D3D12_RESOURCE_STATES mStartState = D3D12_RESOURCE_STATE_COMMON;
 	};
 
-	struct rbuffer : public resource {
+	struct buffer : public resource {
 		virtual uint32 getSize() const = 0;
 	};
 
-	RGF_API rbuffer* createBuffer(bufferDesc* pDesc);
+	RGF_API buffer* createBuffer(bufferDesc* pDesc);
 
 	struct textureDesc {
 		device* pDevice = nullptr;

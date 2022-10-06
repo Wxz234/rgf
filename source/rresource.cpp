@@ -4,7 +4,7 @@
 #include "d3dx12.h"
 namespace rgf {
 
-	struct Buffer : public rbuffer {
+	struct Buffer : public buffer {
 		Buffer(bufferDesc* pDesc) {
 			pDevice = pDesc->pDevice;
 			mSize = pDesc->mSize;
@@ -42,7 +42,7 @@ namespace rgf {
 		ID3D12Resource* pResource;
 	};
 
-	rbuffer* createBuffer(bufferDesc* pDesc) {
+	buffer* createBuffer(bufferDesc* pDesc) {
 		return new Buffer(pDesc);
 	}
 
