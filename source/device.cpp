@@ -1,4 +1,5 @@
 #include "device.h"
+#include "rendertarget.h"
 #include "cmdList.h"
 #include "descriptor.h"
 
@@ -213,6 +214,10 @@ namespace rgf {
 			DrawList->AddText(nullptr, fontSize, ImVec2(x, y), color, text.data());
 		}
 
+		void setRenderTarget(rendertarget* pRT) {
+
+		}
+
 		void frame() {
 			_updateState();
 			_beginFrame();
@@ -373,6 +378,10 @@ namespace rgf {
 			removeObject(pDescriptorManager);
 		}
 
+		void _createPipeline() {
+
+		}
+
 		uint32 mWidth;
 		uint32 mHeight;
 
@@ -409,6 +418,9 @@ namespace rgf {
 		ImguiContext* pImguiContext;
 
 		descriptorManager* pDescriptorManager;
+
+		ID3D12PipelineState* pPSO;
+		ID3D12RootSignature* pRoot;
 	};
 
 	device* create(device_desc* pDesc) {
