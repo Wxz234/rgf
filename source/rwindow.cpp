@@ -23,7 +23,7 @@ namespace rgf {
 
 	class RWindow : public window {
 	public:
-		RWindow(windowDesc* pDesc) {
+		RWindow(window_desc* pDesc) {
 
 			WNDCLASSEXW wcex{};
 			wcex.cbSize = sizeof(WNDCLASSEXW);
@@ -57,7 +57,7 @@ namespace rgf {
 		HWND mHwnd;
 	};
 
-	window* create(windowDesc* pDesc) {
+	window* create(window_desc* pDesc) {
 		return new RWindow(pDesc);
 	}
 }

@@ -8,7 +8,7 @@
 
 namespace rgf {
 
-	struct windowDesc {
+	struct window_desc {
 		std::wstring mTitle;
 		uint32 mWidth = 800;
 		uint32 mHeight = 600;
@@ -33,5 +33,5 @@ namespace rgf {
 		}
 	};
 
-	RGF_API window* create(windowDesc* pDesc);
+	RGF_API window* create(window_desc* pDesc);
 }
