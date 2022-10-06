@@ -2,6 +2,8 @@
 #include "rendertarget.h"
 #include "cmdList.h"
 #include "descriptor.h"
+#include "shader/vs/device.h"
+#include "shader/ps/device.h"
 
 #include "D3D12MemAlloc.h"
 #include "third/imgui/imgui.h"
@@ -144,18 +146,24 @@ namespace rgf {
 
 			_createCmdList();
 			_createSwapChainRes();
-			_createImgui(pDesc->mHwnd);
 			_createRTV();
 			_createDescriptorManager();
+			_createPipeline();
+			_createRT();
+			_createImgui(pDesc->mHwnd);
 		}
 
 		~RDevice() {
 			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
 			_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
 			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
+
+			_destroyImgui();
+			_destroyRT();
+			_destroyPipeline();
 			_destroyDescriptorManager();
 			_destroyRTV();
-			_destroyImgui();
+
 			_destroySwapChainRes();
 			_destroyCmdList();
 			pAllocator->Release();
@@ -252,6 +260,8 @@ namespace rgf {
 			mFrameGraphicsList[frameIndex]->open(nullptr);
 
 			auto pGraphicsFrameList = mFrameGraphicsList[frameIndex]->getList();
+			//pGraphicsFrameList->SetGraphicsRootSignature(pRoot);
+
 			D3D12_RESOURCE_BARRIER barrier = {};
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -336,7 +346,7 @@ namespace rgf {
 			ImGui::CreateContext();
 			ImGuiIO& io = ImGui::GetIO(); (void)io;
 			ImGui_ImplWin32_Init(hwnd);
-			ImGui_ImplDX12_Init(pDevice, FRAME_COUNT, FRAME_FORMAT, pImguiContext->pImguiHeap, pImguiContext->pImguiHeap->GetCPUDescriptorHandleForHeapStart(), pImguiContext->pImguiHeap->GetGPUDescriptorHandleForHeapStart());
+			ImGui_ImplDX12_Init(pDevice, FRAME_COUNT, FRAME_FORMAT, pDescriptorManager->pDescriptorHeap, pImguiContext->pImguiHeap->GetCPUDescriptorHandleForHeapStart(), pImguiContext->pImguiHeap->GetGPUDescriptorHandleForHeapStart());
 		}
 
 		void _destroyImgui() {
@@ -379,7 +389,38 @@ namespace rgf {
 		}
 
 		void _createPipeline() {
+			pDevice->CreateRootSignature(0, deviceVS, sizeof(deviceVS), IID_PPV_ARGS(&pRoot));
 
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
+            psoDesc.pRootSignature = pRoot;
+            psoDesc.VS = { deviceVS, sizeof(deviceVS) };
+            psoDesc.PS = { devicePS, sizeof(devicePS) };
+            psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+            psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+            psoDesc.SampleMask = 0xffffffff;
+            psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+            psoDesc.NumRenderTargets = 1;
+            psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+            psoDesc.SampleDesc.Count = 1;
+            pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pPSO));
+		}
+
+		void _destroyPipeline() {
+			pRoot->Release();
+			pPSO->Release();
+		}
+
+		void _createRT() {
+			rendertarget_desc rt_desc{};
+			rt_desc.mWidth = mWidth;
+			rt_desc.mHeight = mHeight;
+			rt_desc.pDevice = this;
+			rt_desc.mFormat = FRAME_FORMAT;
+			pSelfRT = create(&rt_desc);
+		}
+
+		void _destroyRT() {
+			removeObject(pSelfRT);
 		}
 
 		uint32 mWidth;
@@ -413,6 +454,7 @@ namespace rgf {
 
 		struct ImguiContext {
 			ID3D12DescriptorHeap* pImguiHeap = nullptr;
+			uint32 mSRV_Index = 0;
 			bool bIsCalled = false;
 		};
 		ImguiContext* pImguiContext;
@@ -421,6 +463,9 @@ namespace rgf {
 
 		ID3D12PipelineState* pPSO;
 		ID3D12RootSignature* pRoot;
+
+		rendertarget* pRT;
+		rendertarget* pSelfRT;
 	};
 
 	device* create(device_desc* pDesc) {

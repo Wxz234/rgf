@@ -12,6 +12,7 @@ namespace rgf {
 			mFormat = pDesc->mFormat;
 
 			D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mFormat, pDesc->mWidth, pDesc->mHeight);
+			resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 			D3D12MA::ALLOCATION_DESC allocDesc{};
 			allocDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
 			auto pAllocator = (D3D12MA::Allocator*)pDevice->getResourceAllocator();

@@ -110,20 +110,23 @@ namespace rgf {
 
 		void bindSRV(uint32 index, ID3D12Resource* pRes, const D3D12_SHADER_RESOURCE_VIEW_DESC* pDesc) {
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+			CD3DX12_CPU_DESCRIPTOR_HANDLE visablehandle(pVisableDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
 			pDevice->CreateShaderResourceView(pRes, pDesc, handle);
-			pDevice->CopyDescriptorsSimple(1, pVisableDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			pDevice->CopyDescriptorsSimple(1, visablehandle, handle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 
 		void bindCBV(uint32 index, const D3D12_CONSTANT_BUFFER_VIEW_DESC* pDesc) {
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+			CD3DX12_CPU_DESCRIPTOR_HANDLE visablehandle(pVisableDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
 			pDevice->CreateConstantBufferView(pDesc, handle);
-			pDevice->CopyDescriptorsSimple(1, pVisableDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			pDevice->CopyDescriptorsSimple(1, visablehandle, handle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 
 		void bindUAV(uint32 index, ID3D12Resource* pRes, ID3D12Resource* pCounterResource, const D3D12_UNORDERED_ACCESS_VIEW_DESC* pDesc) {
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+			CD3DX12_CPU_DESCRIPTOR_HANDLE visablehandle(pVisableDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
 			pDevice->CreateUnorderedAccessView(pRes, pCounterResource, pDesc, handle);
-			pDevice->CopyDescriptorsSimple(1, pVisableDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			pDevice->CopyDescriptorsSimple(1, visablehandle, handle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 
 		D3D12_CPU_DESCRIPTOR_HANDLE getVisableDescriptor(uint32 index) const {
@@ -131,7 +134,21 @@ namespace rgf {
 			return handle;
 		}
 
-	private:
+		//D3D12_CPU_DESCRIPTOR_HANDLE getCPUDescriptor(uint32 index) const {
+		//	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+		//	return handle;
+		//}
+
+		//D3D12_GPU_DESCRIPTOR_HANDLE getGPUDescriptor(uint32 index) const {
+		//	CD3DX12_GPU_DESCRIPTOR_HANDLE handle(pDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+		//	return handle;
+		//}
+
+		//void copy(uint32 index) {
+
+		//}
+
+
 		void _init(ID3D12Device* pDevice) {
 
 			mNumDescriptors = 10;
