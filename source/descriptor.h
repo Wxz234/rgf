@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace rgf {
-	struct descriptorManager : public robject {
+	struct descriptorManager : public object {
 		descriptorManager(ID3D12Device* pDevice) {
 			_init(pDevice);
 		}

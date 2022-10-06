@@ -2,11 +2,11 @@
 
 namespace rgf {
 
-	struct robject {
+	struct object {
 		virtual void release() = 0;
 	};
 
-	inline void removeObject(robject* pObj) {
+	inline void removeObject(object* pObj) {
 		pObj->release();
 	}
 

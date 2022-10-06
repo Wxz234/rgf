@@ -15,7 +15,7 @@ namespace rgf {
 		HINSTANCE mHinstance = NULL;
 	};
 
-	struct rwindow : public robject {
+	struct rwindow : public object {
 		virtual HWND getHWND() const = 0;
 
 		template <typename Function, typename... Args>

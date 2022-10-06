@@ -14,7 +14,7 @@ namespace rgf {
 		uint32 mHeight = 600;
 	};
 
-	struct rdevice : public robject {
+	struct rdevice : public object {
 		virtual ID3D12Device* getDevice() const = 0;
 		virtual IDXGISwapChain* getSwapChain() const = 0;
 		virtual void* getResourceAllocator() const = 0;

@@ -5,7 +5,7 @@
 
 namespace rgf {
 
-	struct cmdList : public robject {
+	struct cmdList : public object {
 		cmdList(ID3D12Device* pDevice, D3D12_COMMAND_LIST_TYPE type) {
 			pDevice->CreateCommandAllocator(type, IID_PPV_ARGS(&pAllocator));
 			ID3D12Device4* tempDevice;

@@ -8,7 +8,7 @@
 
 namespace rgf {
 
-	struct rresource : public robject {
+	struct rresource : public object {
 		virtual ID3D12Resource* getResource() const = 0;
 	};
 
