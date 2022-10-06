@@ -8,12 +8,12 @@ void draw(rgf::device* pDevice) {
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd) {
     constexpr unsigned width = 800, height = 600;
-    rgf::windowDesc window_desc;
-    window_desc.mTitle = L"TheAftermath";
-    window_desc.mWidth = width;
-    window_desc.mHeight = height;
-    window_desc.mHinstance = hInstance;
-    auto window = rgf::create(&window_desc);
+    rgf::window_desc windowDesc;
+    windowDesc.mTitle = L"TheAftermath";
+    windowDesc.mWidth = width;
+    windowDesc.mHeight = height;
+    windowDesc.mHinstance = hInstance;
+    auto window = rgf::create(&windowDesc);
 
     rgf::device_desc deviceDesc;
     deviceDesc.mWidth = width;
