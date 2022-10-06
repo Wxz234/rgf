@@ -12,7 +12,7 @@ namespace rgf {
 		virtual ID3D12Resource* getResource() const = 0;
 	};
 
-	struct bufferDesc {
+	struct buffer_desc {
 		device* pDevice = nullptr;
 		uint32 mSize = 0;
 		D3D12_HEAP_TYPE mHeapType = D3D12_HEAP_TYPE_DEFAULT;
@@ -23,7 +23,7 @@ namespace rgf {
 		virtual uint32 getSize() const = 0;
 	};
 
-	RGF_API buffer* createBuffer(bufferDesc* pDesc);
+	RGF_API buffer* createBuffer(buffer_desc* pDesc);
 
 	struct textureDesc {
 		device* pDevice = nullptr;

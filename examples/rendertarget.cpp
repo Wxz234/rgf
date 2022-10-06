@@ -21,7 +21,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     deviceDesc.mHwnd = window->getHWND();
     auto device = rgf::create(&deviceDesc);
 
-    rgf::bufferDesc buffer_desc{};
+    rgf::buffer_desc buffer_desc{};
     buffer_desc.pDevice = device;
     buffer_desc.mSize = 100;
     auto buffer = rgf::createBuffer(&buffer_desc);

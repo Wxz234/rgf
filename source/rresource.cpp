@@ -5,7 +5,7 @@
 namespace rgf {
 
 	struct Buffer : public buffer {
-		Buffer(bufferDesc* pDesc) {
+		Buffer(buffer_desc* pDesc) {
 			pDevice = pDesc->pDevice;
 			mSize = pDesc->mSize;
 
@@ -42,7 +42,7 @@ namespace rgf {
 		ID3D12Resource* pResource;
 	};
 
-	buffer* createBuffer(bufferDesc* pDesc) {
+	buffer* createBuffer(buffer_desc* pDesc) {
 		return new Buffer(pDesc);
 	}
 
