@@ -8,13 +8,13 @@
 
 namespace rgf {
 
-	struct rdeviceDesc {
+	struct deviceDesc {
 		HWND mHwnd = NULL;
 		uint32 mWidth = 800;
 		uint32 mHeight = 600;
 	};
 
-	struct rdevice : public object {
+	struct device : public object {
 		virtual ID3D12Device* getDevice() const = 0;
 		virtual IDXGISwapChain* getSwapChain() const = 0;
 		virtual void* getResourceAllocator() const = 0;
@@ -24,5 +24,5 @@ namespace rgf {
 		virtual void frame() = 0;
 	};
 
-	RGF_API rdevice* create(rdeviceDesc* pDesc);
+	RGF_API device* create(deviceDesc* pDesc);
 }

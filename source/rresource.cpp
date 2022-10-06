@@ -36,7 +36,7 @@ namespace rgf {
 
 		uint32 mSize;
 
-		rdevice* pDevice;
+		device* pDevice;
 
 		D3D12MA::Allocation* pAllocation;
 		ID3D12Resource* pResource;
@@ -77,7 +77,7 @@ namespace rgf {
 
 		DXGI_FORMAT mFormat;
 
-		rdevice* pDevice;
+		device* pDevice;
 
 		D3D12MA::Allocation* pAllocation;
 		ID3D12Resource* pResource;

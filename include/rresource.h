@@ -13,7 +13,7 @@ namespace rgf {
 	};
 
 	struct bufferDesc {
-		rdevice* pDevice = nullptr;
+		device* pDevice = nullptr;
 		uint32 mSize = 0;
 		D3D12_HEAP_TYPE mHeapType = D3D12_HEAP_TYPE_DEFAULT;
 		D3D12_RESOURCE_STATES mStartState = D3D12_RESOURCE_STATE_COMMON;
@@ -26,7 +26,7 @@ namespace rgf {
 	RGF_API rbuffer* createBuffer(bufferDesc* pDesc);
 
 	struct textureDesc {
-		rdevice* pDevice = nullptr;
+		device* pDevice = nullptr;
 		DXGI_FORMAT mFormat = DXGI_FORMAT_UNKNOWN;
 		uint32 mWidth = 800;
 		uint32 mHeight = 600;

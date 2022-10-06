@@ -112,8 +112,8 @@ namespace rgf {
 		return pAllocator;
 	}
 
-	struct RDevice : public rdevice {
-		RDevice(rdeviceDesc* pDesc) {
+	struct RDevice : public device {
+		RDevice(deviceDesc* pDesc) {
 			pAdapter = getAdapter();
 			pDevice = _getDevice(pAdapter);
 
@@ -411,7 +411,7 @@ namespace rgf {
 		descriptorManager* pDescriptorManager;
 	};
 
-	rdevice* create(rdeviceDesc* pDesc) {
+	device* create(deviceDesc* pDesc) {
 		return new RDevice(pDesc);
 	}
 }
