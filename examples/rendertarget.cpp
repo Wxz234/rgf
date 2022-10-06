@@ -21,8 +21,14 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     rdevice_desc.mHwnd = rwindow->getHWND();
     auto rdevice = rgf::create(&rdevice_desc);
 
+    rgf::bufferDesc buffer_desc{};
+    buffer_desc.pDevice = rdevice;
+    buffer_desc.mSize = 100;
+    auto buffer = rgf::createBuffer(&buffer_desc);
+
     rgf::rwindow::run(draw, rdevice);
 
+    rgf::removeObject(buffer);
     rgf::removeObject(rdevice);
     rgf::removeObject(rwindow);
     return 0;
