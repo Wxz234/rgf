@@ -9,7 +9,7 @@ void draw(rgf::device* pDevice) {
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd) {
     constexpr unsigned width = 800, height = 600;
     rgf::window_desc windowDesc;
-    windowDesc.mTitle = L"TheAftermath";
+    windowDesc.mTitle = L"rgf";
     windowDesc.mWidth = width;
     windowDesc.mHeight = height;
     windowDesc.mHinstance = hInstance;

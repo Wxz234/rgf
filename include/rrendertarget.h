@@ -6,7 +6,7 @@
 #include <d3d12.h>
 
 namespace rgf {
-	struct rrendertarget : public rtexture {
+	struct rendertarget : public texture {
 
 	};
 }

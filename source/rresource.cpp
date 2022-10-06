@@ -46,8 +46,8 @@ namespace rgf {
 		return new Buffer(pDesc);
 	}
 
-	struct Texture : public rtexture {
-		Texture(textureDesc* pDesc) {
+	struct Texture : public texture {
+		Texture(texture_desc* pDesc) {
 			pDevice = pDesc->pDevice;
 			mFormat = pDesc->mFormat;
 
@@ -83,7 +83,7 @@ namespace rgf {
 		ID3D12Resource* pResource;
 	};
 
-	rtexture* createTexture(textureDesc* pDesc) {
+	texture* createTexture(texture_desc* pDesc) {
 		return new Texture(pDesc);
 	}
 }

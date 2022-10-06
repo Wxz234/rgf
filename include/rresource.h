@@ -25,7 +25,7 @@ namespace rgf {
 
 	RGF_API buffer* createBuffer(buffer_desc* pDesc);
 
-	struct textureDesc {
+	struct texture_desc {
 		device* pDevice = nullptr;
 		DXGI_FORMAT mFormat = DXGI_FORMAT_UNKNOWN;
 		uint32 mWidth = 800;
@@ -34,9 +34,9 @@ namespace rgf {
 		D3D12_RESOURCE_STATES mStartState = D3D12_RESOURCE_STATE_COMMON;
 	};
 
-	struct rtexture : public resource {
+	struct texture : public resource {
 		virtual DXGI_FORMAT getFormat() const = 0;
 	};
 
-	RGF_API rtexture* createTexture(textureDesc* pDesc);
+	RGF_API texture* createTexture(texture_desc* pDesc);
 }
