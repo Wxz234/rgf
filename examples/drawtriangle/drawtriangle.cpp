@@ -35,8 +35,8 @@ struct Context {
         textureDesc.initialState = nvrhi::ResourceStates::Present;
         textureDesc.keepInitialState = true;
         for (uint32_t i = 0;i < pDevice->getFrameCount(); ++i) {
-            swapchainTexture.push_back(nvrhiDevice->createHandleForNativeTexture(nvrhi::ObjectTypes::D3D12_Resource, nvrhi::Object(pDevice->getFrameResource(i)), textureDesc));
-            swapchainFramebuffers.push_back(nvrhiDevice->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(swapchainTexture[i])));
+            swapchainTextures.push_back(nvrhiDevice->createHandleForNativeTexture(nvrhi::ObjectTypes::D3D12_Resource, nvrhi::Object(pDevice->getFrameResource(i)), textureDesc));
+            swapchainFramebuffers.push_back(nvrhiDevice->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(swapchainTextures[i])));
         }
 
         commandList = nvrhiDevice->createCommandList();
@@ -45,10 +45,6 @@ struct Context {
     static void destroy() {
         nvrhiDevice->waitForIdle();
         nvrhiDevice->runGarbageCollection();
-
-        swapchainTexture.clear();
-        swapchainFramebuffers.clear();
-
         rgf::destroy(pDevice);
     }
 
@@ -58,7 +54,9 @@ struct Context {
         auto frameIndex = pDevice->getFrameIndex();
         nvrhi::utils::ClearColorAttachment(commandList, swapchainFramebuffers[frameIndex], 0, nvrhi::Color(0.5f));
         commandList->close();
+
         nvrhiDevice->executeCommandList(commandList);
+
         pDevice->frame();
         nvrhiDevice->runGarbageCollection();
     }
@@ -77,9 +75,10 @@ private:
 
     inline static rgf::IDevice* pDevice = nullptr;
     inline static nvrhi::DeviceHandle nvrhiDevice;
-    inline static std::vector<nvrhi::TextureHandle> swapchainTexture;
+    inline static std::vector<nvrhi::TextureHandle> swapchainTextures;
     inline static std::vector<nvrhi::FramebufferHandle> swapchainFramebuffers;
     inline static nvrhi::CommandListHandle commandList;
+    inline static nvrhi::GraphicsPipelineHandle pipeline;
 };
 
 void render() {
