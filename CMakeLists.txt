@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 3.24)
+project("rgf")
+
+#set(NVRHI_BUILD_SHARED ON CACHE BOOL "Build NVRHI as a shared library (DLL or .so)")
+set(NVRHI_WITH_SHADER_COMPILER OFF CACHE BOOL "Build the NVRHI shader compiler executable")
+set(NVRHI_INSTALL OFF CACHE BOOL "Generate install rules for NVRHI")
+set(NVRHI_WITH_VULKAN OFF CACHE BOOL "Build the NVRHI Vulkan backend")
+set(NVRHI_WITH_DX11 OFF CACHE BOOL "Build the NVRHI D3D11 backend")
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_subdirectory("nvrhi")
+add_subdirectory("source")
+add_subdirectory("examples/hellowindow")
