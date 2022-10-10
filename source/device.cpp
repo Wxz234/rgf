@@ -1,6 +1,7 @@
 #include "rgf/device.h"
 
 #include <dxgi1_6.h>
+#include <vector>
 
 #define FRAME_COUNT 2
 #define FRAME_FORMAT DXGI_FORMAT_R8G8B8A8_UNORM
@@ -78,15 +79,25 @@ namespace rgf {
 			pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pComputeFence));
 			mComputeFenceEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
 
-			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
-			_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
-			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
+			for (uint32 i = 0;i < FRAME_COUNT; ++i) {
+				ID3D12Resource* pRes;
+				pSwapChain->GetBuffer(i, IID_PPV_ARGS(&pRes));
+				mRes.push_back(pRes);
+			}
+
+			//_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
+			//_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
+			//_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
 
 		}
 		~Device() {
 			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
 			_wait(mCopyFenceValue, pCopyQueue, pCopyFence, mCopyFenceEvent);
 			_wait(mComputeFenceValue, pComputeQueue, pComputeFence, mComputeFenceEvent);
+
+			for (uint32 i = 0; i < FRAME_COUNT; ++i) {
+				mRes[i]->Release();
+			}
 
 			CloseHandle(mComputeFenceEvent);
 			pComputeFence->Release();
@@ -116,6 +127,7 @@ namespace rgf {
 		virtual ID3D12Device* getDevice() const {
 			return pDevice;
 		}
+
 		virtual ID3D12CommandQueue* getQueue(D3D12_COMMAND_LIST_TYPE type) const {
 			if (type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
 				return pGraphicsQueue;
@@ -128,6 +140,19 @@ namespace rgf {
 			}
 			return nullptr;
 		}
+
+		uint32 getFrameCount() const {
+			return FRAME_COUNT;
+		}
+
+		ID3D12Resource* getFrameResource(uint32 index) const {
+			return mRes[index];
+		}
+
+		uint32 getFrameIndex() const {
+			return pSwapChain->GetCurrentBackBufferIndex();
+		}
+
 		virtual void frame() {
 			pSwapChain->Present(1, 0);
 			_wait(mGFenceValue, pGraphicsQueue, pGFence, mGFenceEvent);
@@ -150,6 +175,8 @@ namespace rgf {
 		uint64 mComputeFenceValue;
 		ID3D12Fence* pComputeFence;
 		HANDLE mComputeFenceEvent;
+
+		std::vector<ID3D12Resource*> mRes;
 	};
 
 	IDevice* create(DeviceDesc* pDesc) {
